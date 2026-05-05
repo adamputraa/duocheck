@@ -31,7 +31,6 @@ interface SharingSettings {
   shortcut_token: string | null
   stale_threshold_hours: number
   history_retention_days: number
-  created_at: string
   updated_at: string
 }
 

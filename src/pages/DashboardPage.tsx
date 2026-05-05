@@ -117,32 +117,31 @@ export default function DashboardPage() {
       const { latitude, longitude, accuracy } = position.coords
 
       // Insert SOS event with resolved_at = null (active)
-      const { error: insertError } = await supabase.from('sos_events').insert({
+      const { data: sosData, error: insertError } = await supabase.from('sos_events').insert({
         user_id: user.id,
         couple_id: couple.id,
         latitude,
         longitude,
         accuracy,
         resolved_at: null,
-      })
+      }).select('id').single()
 
       if (insertError) {
         setSosError('Failed to send SOS. Please try again.')
       }
 
-      // Try to invoke SOS notify edge function
-      try {
-        await supabase.functions.invoke('sos-notify', {
-          body: {
-            user_id: user.id,
-            couple_id: couple.id,
-            latitude,
-            longitude,
-          },
-        })
-      } catch {
-        // Show warning about email failure but don't block
-        setSosError('SOS sent but email notification may have failed. Your partner will see it in the app.')
+      // Try to invoke SOS notify edge function with the SOS event ID
+      if (sosData) {
+        try {
+          await supabase.functions.invoke('sos-notify', {
+            body: {
+              sosEventId: sosData.id,
+            },
+          })
+        } catch {
+          // Show warning about email failure but don't block
+          setSosError('SOS sent but email notification may have failed. Your partner will see it in the app.')
+        }
       }
 
       await refresh()

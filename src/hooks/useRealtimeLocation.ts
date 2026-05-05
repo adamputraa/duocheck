@@ -26,7 +26,7 @@ interface SosEvent {
   couple_id: string
   latitude: number
   longitude: number
-  accuracy: number | null
+  accuracy?: number | null
   resolved_at: string | null
   created_at: string
 }

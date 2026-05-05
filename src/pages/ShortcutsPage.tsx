@@ -100,7 +100,7 @@ export default function ShortcutsPage() {
 
   const getShortcutUrl = (status: string) => {
     if (!shortcutToken) return ''
-    return `${supabaseUrl}/functions/v1/shortcut-checkin?token=${shortcutToken}&status=${encodeURIComponent(status)}&source=shortcut`
+    return `${supabaseUrl}/functions/v1/location-webhook?token=${shortcutToken}&status=${encodeURIComponent(status)}&source=ios_shortcut`
   }
 
   const handleRegenerateToken = async () => {

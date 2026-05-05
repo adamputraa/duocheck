@@ -26,7 +26,6 @@ interface PartnerSettings {
   user_id: string
   sharing_enabled: boolean
   shortcut_token: string | null
-  created_at: string
   updated_at: string
 }
 
