@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64">
+      <stop offset="0%" stop-color="#D97756"/>
+      <stop offset="100%" stop-color="#C4613F"/>
+    </linearGradient>
+  </defs>
+  <!-- Shield shape -->
+  <path d="M32 4 L56 14 L56 32 C56 46 45 58 32 62 C19 58 8 46 8 32 L8 14 Z" fill="url(#bg)"/>
+  <!-- Checkmark -->
+  <path d="M22 32 L29 39 L42 25" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

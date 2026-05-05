@@ -1,0 +1,2 @@
+-- Seed data for development/testing only
+-- This file is for reference and should NOT be run in production
