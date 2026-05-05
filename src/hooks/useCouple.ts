@@ -207,6 +207,7 @@ export function useCouple(): UseCoupleReturn {
         .from('couples')
         .insert({
           invite_code: inviteCode,
+          created_by: user.id,
         })
         .select()
         .single()
