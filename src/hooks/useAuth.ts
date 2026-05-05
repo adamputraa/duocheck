@@ -1,6 +1,6 @@
 /**
  * Authentication hook for DuoCheck.
- * Manages Supabase Auth state, sign-in, sign-up, and sign-out.
+ * Manages Supabase Auth state, sign-in, sign-up, OTP verification, and sign-out.
  * Automatically creates profile and sharing_settings on first sign-up.
  */
 
@@ -16,7 +16,8 @@ interface AuthState {
 
 interface UseAuthReturn extends AuthState {
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, displayName: string) => Promise<void>
+  signUp: (email: string, password: string, displayName: string) => Promise<{ otpSent: boolean }>
+  verifyOtp: (email: string, token: string) => Promise<void>
   signOut: () => Promise<void>
   clearError: () => void
 }
@@ -85,12 +86,17 @@ export function useAuth(): UseAuthReturn {
     // Auth state change listener will update user
   }, [])
 
-  const signUp = useCallback(async (email: string, password: string, displayName: string) => {
+  const signUp = useCallback(async (email: string, password: string, displayName: string): Promise<{ otpSent: boolean }> => {
     setState((prev) => ({ ...prev, loading: true, error: null }))
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          display_name: displayName,
+        },
+      },
     })
 
     if (error) {
@@ -102,11 +108,17 @@ export function useAuth(): UseAuthReturn {
       throw error
     }
 
-    // Auto-create profile and sharing_settings for the new user
-    if (data.user) {
+    // Check if user needs email confirmation (OTP was sent)
+    if (data.user && !data.session) {
+      // OTP sent — user needs to verify email
+      setState((prev) => ({ ...prev, loading: false }))
+      return { otpSent: true }
+    }
+
+    // If session exists (auto-confirmed), create profile and settings
+    if (data.user && data.session) {
       const shortcutToken = generateShortcutToken()
 
-      // Create profile
       const { error: profileError } = await supabase.from('profiles').insert({
         id: data.user.id,
         display_name: displayName,
@@ -116,7 +128,6 @@ export function useAuth(): UseAuthReturn {
         console.error('Failed to create profile:', profileError)
       }
 
-      // Create sharing settings
       const { error: settingsError } = await supabase.from('sharing_settings').insert({
         user_id: data.user.id,
         sharing_enabled: true,
@@ -125,6 +136,62 @@ export function useAuth(): UseAuthReturn {
 
       if (settingsError) {
         console.error('Failed to create sharing settings:', settingsError)
+      }
+    }
+
+    setState((prev) => ({ ...prev, loading: false }))
+    return { otpSent: false }
+  }, [])
+
+  const verifyOtp = useCallback(async (email: string, token: string) => {
+    setState((prev) => ({ ...prev, loading: true, error: null }))
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'signup',
+    })
+
+    if (error) {
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+        error: error.message,
+      }))
+      throw error
+    }
+
+    // On successful OTP verification, create profile and sharing settings
+    if (data.user) {
+      const displayName = data.user.user_metadata?.display_name || 'User'
+      const shortcutToken = generateShortcutToken()
+
+      // Check if profile already exists (in case of race condition)
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', data.user.id)
+        .maybeSingle()
+
+      if (!existingProfile) {
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: data.user.id,
+          display_name: displayName,
+        })
+
+        if (profileError) {
+          console.error('Failed to create profile:', profileError)
+        }
+
+        const { error: settingsError } = await supabase.from('sharing_settings').insert({
+          user_id: data.user.id,
+          sharing_enabled: true,
+          shortcut_token: shortcutToken,
+        })
+
+        if (settingsError) {
+          console.error('Failed to create sharing settings:', settingsError)
+        }
       }
     }
 
@@ -154,6 +221,7 @@ export function useAuth(): UseAuthReturn {
     error: state.error,
     signIn,
     signUp,
+    verifyOtp,
     signOut,
     clearError,
   }
