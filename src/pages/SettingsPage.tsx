@@ -22,6 +22,9 @@ import {
   Smartphone,
   Users,
   AlertTriangle,
+  Copy,
+  RefreshCw,
+  Check,
 } from 'lucide-react'
 
 interface SharingSettings {
@@ -51,7 +54,7 @@ const RETENTION_OPTIONS = [
 export default function SettingsPage() {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
-  const { couple, partner, isInCouple, refreshCouple } = useCouple()
+  const { couple, partner, isInCouple, refreshCouple, regenerateInviteCode } = useCouple()
   const [settings, setSettings] = useState<SharingSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState(false)
@@ -63,6 +66,8 @@ export default function SettingsPage() {
   const [deletingHistory, setDeletingHistory] = useState(false)
   const [updatingThreshold, setUpdatingThreshold] = useState(false)
   const [updatingRetention, setUpdatingRetention] = useState(false)
+  const [codeCopied, setCodeCopied] = useState(false)
+  const [regeneratingCode, setRegeneratingCode] = useState(false)
 
   // Fetch settings and profile
   useEffect(() => {
@@ -249,6 +254,91 @@ export default function SettingsPage() {
             </div>
           </div>
         </section>
+
+        {/* ── Join Code Section ── */}
+        {isInCouple && couple?.invite_code && (
+          <section className="bg-card rounded-2xl border border-border-light p-5 shadow-sm">
+            <h2 className="font-semibold text-text-dark mb-4 flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              Join Code
+            </h2>
+
+            <p className="text-xs text-text-muted mb-3">
+              Share this code with your partner so they can join your group.
+            </p>
+
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex-1 bg-cream border border-border-light rounded-xl px-4 py-3 text-center">
+                <span className="text-2xl font-bold tracking-[0.3em] text-primary">
+                  {couple.invite_code}
+                </span>
+              </div>
+              <button
+                onClick={async () => {
+                  if (!couple.invite_code) return
+                  await navigator.clipboard.writeText(couple.invite_code)
+                  setCodeCopied(true)
+                  setTimeout(() => setCodeCopied(false), 2000)
+                }}
+                className="h-12 w-12 flex items-center justify-center rounded-xl border border-border-light hover:bg-primary-light/30 transition min-h-[44px] min-w-[44px]"
+                aria-label="Copy join code"
+              >
+                {codeCopied ? (
+                  <Check className="w-5 h-5 text-success" />
+                ) : (
+                  <Copy className="w-5 h-5 text-text-muted" />
+                )}
+              </button>
+            </div>
+
+            <button
+              onClick={async () => {
+                setRegeneratingCode(true)
+                await regenerateInviteCode()
+                setRegeneratingCode(false)
+              }}
+              disabled={regeneratingCode}
+              className="w-full h-10 border border-border-light text-text-muted text-sm font-medium rounded-xl hover:border-primary/30 hover:text-primary transition flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${regeneratingCode ? 'animate-spin' : ''}`} />
+              {regeneratingCode ? 'Regenerating…' : 'Regenerate Code'}
+            </button>
+          </section>
+        )}
+
+        {/* ── Waiting for Partner ── */}
+        {isInCouple && !partner && !couple?.invite_code && (
+          <section className="bg-card rounded-2xl border border-primary/20 p-5 shadow-sm">
+            <h2 className="font-semibold text-text-dark mb-3 flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              Partner Access
+            </h2>
+            <p className="text-sm text-text-muted mb-3">
+              No partner has joined yet. Generate a join code to invite them.
+            </p>
+            <button
+              onClick={async () => {
+                setRegeneratingCode(true)
+                const result = await regenerateInviteCode()
+                setRegeneratingCode(false)
+                if (result?.inviteCode) {
+                  await navigator.clipboard.writeText(result.inviteCode)
+                  setCodeCopied(true)
+                  setTimeout(() => setCodeCopied(false), 2000)
+                }
+              }}
+              disabled={regeneratingCode}
+              className="w-full h-12 bg-primary hover:bg-primary-dark text-white font-semibold rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {regeneratingCode ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Users className="w-4 h-4" />
+              )}
+              {regeneratingCode ? 'Generating…' : 'Generate Join Code'}
+            </button>
+          </section>
+        )}
 
         {/* ── Sharing Settings ── */}
         <section className="bg-card rounded-2xl border border-border-light p-5 shadow-sm">

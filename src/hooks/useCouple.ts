@@ -37,6 +37,7 @@ interface UseCoupleReturn {
   error: string | null
   createGroup: () => Promise<{ inviteCode: string } | null>
   joinWithCode: (code: string) => Promise<{ success: boolean; message: string }>
+  regenerateInviteCode: () => Promise<{ inviteCode: string } | null>
   isInCouple: boolean
   refreshCouple: () => Promise<void>
 }
@@ -345,6 +346,40 @@ export function useCouple(): UseCoupleReturn {
     }
   }, [user, refreshCouple])
 
+  const regenerateInviteCode = useCallback(async (): Promise<{ inviteCode: string } | null> => {
+    if (!user || !couple) {
+      setError('No couple found.')
+      return null
+    }
+
+    if (partner) {
+      setError('Cannot regenerate code — your partner has already joined.')
+      return null
+    }
+
+    try {
+      const newCode = generateInviteCode()
+
+      const { error: updateError } = await supabase
+        .from('couples')
+        .update({ invite_code: newCode })
+        .eq('id', couple.id)
+
+      if (updateError) {
+        console.error('Error regenerating invite code:', updateError)
+        setError('Failed to regenerate invite code.')
+        return null
+      }
+
+      setCouple({ ...couple, invite_code: newCode })
+      return { inviteCode: newCode }
+    } catch (err) {
+      console.error('Unexpected error in regenerateInviteCode:', err)
+      setError('An unexpected error occurred.')
+      return null
+    }
+  }, [user, couple, partner])
+
   return {
     couple,
     partner,
@@ -353,6 +388,7 @@ export function useCouple(): UseCoupleReturn {
     error,
     createGroup,
     joinWithCode,
+    regenerateInviteCode,
     isInCouple,
     refreshCouple,
   }
