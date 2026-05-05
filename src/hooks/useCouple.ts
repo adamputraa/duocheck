@@ -161,7 +161,7 @@ export function useCouple(): UseCoupleReturn {
       setError(null)
 
       try {
-        const data = await fetchCoupleData(user.id)
+        const data = await fetchCoupleData(user!.id)
         if (!cancelled && mountedRef.current) {
           setCouple(data.couple)
           setPartner(data.partner)

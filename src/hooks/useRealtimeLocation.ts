@@ -114,7 +114,7 @@ export function useRealtimeLocation(): UseRealtimeLocationReturn {
       const { data: membership } = await supabase
         .from('couple_members')
         .select('couple_id')
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
         .single()
 
       if (cancelled || !membership) return
@@ -126,7 +126,7 @@ export function useRealtimeLocation(): UseRealtimeLocationReturn {
       }
 
       // Fetch initial data
-      const data = await fetchInitialData(user.id, cId)
+      const data = await fetchInitialData(user!.id, cId)
       if (!cancelled && mountedRef.current) {
         setPartnerLocation(data.partnerLocation)
         setOwnLocation(data.ownLocation)
