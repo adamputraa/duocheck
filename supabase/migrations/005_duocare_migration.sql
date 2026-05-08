@@ -140,7 +140,18 @@ CREATE INDEX IF NOT EXISTS idx_care_tasks_couple ON care_tasks(couple_id);
 CREATE INDEX IF NOT EXISTS idx_emergency_events_couple ON emergency_events(couple_id);
 
 -- 12. Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE pregnancy_checkins;
-ALTER PUBLICATION supabase_realtime ADD TABLE emergency_events;
-ALTER PUBLICATION supabase_realtime ADD TABLE appointments;
-ALTER PUBLICATION supabase_realtime ADD TABLE care_tasks;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'pregnancy_checkins') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE pregnancy_checkins;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'emergency_events') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE emergency_events;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'appointments') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE appointments;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'care_tasks') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE care_tasks;
+  END IF;
+END $$;
