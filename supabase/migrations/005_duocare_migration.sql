@@ -9,6 +9,10 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now
 -- 2. Modify couple_members role
 ALTER TABLE couple_members DROP CONSTRAINT IF EXISTS couple_members_role_check;
 ALTER TABLE couple_members ALTER COLUMN role DROP DEFAULT;
+
+-- Update any existing rows to valid values before applying the constraint
+UPDATE couple_members SET role = 'wife' WHERE role NOT IN ('wife', 'husband') OR role IS NULL;
+
 ALTER TABLE couple_members ADD CONSTRAINT couple_members_role_check CHECK (role IN ('wife', 'husband'));
 
 -- 3. Privacy settings (replaces sharing_settings)
