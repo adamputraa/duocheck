@@ -1,6 +1,7 @@
 {
-  "name": "DuoCheck",
-  "short_name": "DuoCheck",
+  "name": "DuoCare",
+  "short_name": "DuoCare",
+  "description": "Private pregnancy companion for husband and wife",
   "theme_color": "#D97756",
   "background_color": "#FAF9F7",
   "display": "standalone",

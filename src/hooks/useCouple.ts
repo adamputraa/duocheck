@@ -1,7 +1,7 @@
 /**
- * Couple management hook for DuoCheck.
+ * Couple management hook for DuoCare.
  * Handles creating a couple group, joining with an invite code,
- * and fetching couple/partner data.
+ * fetching couple/partner data, and pregnancy profile status.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -18,13 +18,16 @@ interface Couple {
 interface Partner {
   id: string
   display_name: string | null
+  role: string | null
+  phone: string | null
   created_at: string
 }
 
-interface PartnerSettings {
+interface PrivacySettings {
   id: string
   user_id: string
-  sharing_enabled: boolean
+  share_status_with_partner: boolean
+  email_alerts_enabled: boolean
   shortcut_token: string | null
   updated_at: string
 }
@@ -32,31 +35,24 @@ interface PartnerSettings {
 interface UseCoupleReturn {
   couple: Couple | null
   partner: Partner | null
-  partnerSettings: PartnerSettings | null
+  partnerSettings: PrivacySettings | null
+  userRole: string | null
+  hasPregnancyProfile: boolean
   loading: boolean
   error: string | null
-  createGroup: () => Promise<{ inviteCode: string } | null>
-  joinWithCode: (code: string) => Promise<{ success: boolean; message: string }>
+  createGroup: (role: 'wife' | 'husband') => Promise<{ inviteCode: string } | null>
+  joinWithCode: (code: string, role: 'wife' | 'husband') => Promise<{ success: boolean; message: string }>
   regenerateInviteCode: () => Promise<{ inviteCode: string } | null>
   isInCouple: boolean
   refreshCouple: () => Promise<void>
 }
 
-/**
- * Characters allowed in invite codes.
- * Excludes: 0, O (zero/O confusion), 1, I, L (one/I/L confusion)
- * Uses: A-Z (minus O,I,L) and 2-9
- */
 const INVITE_CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 
-/**
- * Generates a random 6-character invite code.
- */
 function generateInviteCode(): string {
   let code = ''
   for (let i = 0; i < 6; i++) {
-    const idx = Math.floor(Math.random() * INVITE_CODE_CHARS.length)
-    code += INVITE_CODE_CHARS[idx]
+    code += INVITE_CODE_CHARS[Math.floor(Math.random() * INVITE_CODE_CHARS.length)]
   }
   return code
 }
@@ -64,60 +60,56 @@ function generateInviteCode(): string {
 async function fetchCoupleData(userId: string): Promise<{
   couple: Couple | null
   partner: Partner | null
-  partnerSettings: PartnerSettings | null
+  partnerSettings: PrivacySettings | null
+  userRole: string | null
+  hasPregnancyProfile: boolean
 }> {
-  // Get user's couple membership
-  const { data: membership, error: membershipError } = await supabase
-    .from('couple_members')
-    .select('couple_id')
-    .eq('user_id', userId)
-    .maybeSingle()
+  const { data: membership } = await supabase
+    .from('couple_members').select('couple_id, role')
+    .eq('user_id', userId).maybeSingle()
 
-  if (membershipError || !membership) {
-    return { couple: null, partner: null, partnerSettings: null }
+  if (!membership) {
+    return { couple: null, partner: null, partnerSettings: null, userRole: null, hasPregnancyProfile: false }
   }
 
-  // Fetch couple details
-  const { data: coupleData, error: coupleError } = await supabase
-    .from('couples')
-    .select('*')
-    .eq('id', membership.couple_id)
-    .single()
+  const userRole = membership.role as string | null
 
-  if (coupleError || !coupleData) {
-    return { couple: null, partner: null, partnerSettings: null }
+  const { data: coupleData } = await supabase
+    .from('couples').select('*').eq('id', membership.couple_id).single()
+
+  if (!coupleData) {
+    return { couple: null, partner: null, partnerSettings: null, userRole, hasPregnancyProfile: false }
   }
 
-  // Fetch partner's profile (the other member of the couple)
-  const { data: partnerMemberships, error: partnerError } = await supabase
-    .from('couple_members')
-    .select('user_id')
-    .eq('couple_id', membership.couple_id)
-    .neq('user_id', userId)
+  // Fetch partner
+  const { data: partnerMemberships } = await supabase
+    .from('couple_members').select('user_id')
+    .eq('couple_id', membership.couple_id).neq('user_id', userId)
 
-  if (partnerError || !partnerMemberships || partnerMemberships.length === 0) {
-    return { couple: coupleData as Couple, partner: null, partnerSettings: null }
+  let partner: Partner | null = null
+  let partnerSettings: PrivacySettings | null = null
+
+  if (partnerMemberships && partnerMemberships.length > 0) {
+    const partnerId = partnerMemberships[0].user_id
+    const { data: partnerProfile } = await supabase
+      .from('profiles').select('*').eq('id', partnerId).single()
+    partner = (partnerProfile as Partner) ?? null
+
+    const { data: pSettings } = await supabase
+      .from('privacy_settings').select('*').eq('user_id', partnerId).single()
+    partnerSettings = (pSettings as PrivacySettings) ?? null
   }
 
-  const partnerId = partnerMemberships[0].user_id
-
-  const { data: partnerProfile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', partnerId)
-    .single()
-
-  // Fetch partner's sharing settings
-  const { data: pSettings } = await supabase
-    .from('sharing_settings')
-    .select('*')
-    .eq('user_id', partnerId)
-    .single()
+  // Check pregnancy profile
+  const { data: pregProfile } = await supabase
+    .from('pregnancy_profiles').select('id').eq('couple_id', membership.couple_id).maybeSingle()
 
   return {
     couple: coupleData as Couple,
-    partner: (partnerProfile as Partner) ?? null,
-    partnerSettings: (pSettings as PartnerSettings) ?? null,
+    partner,
+    partnerSettings,
+    userRole,
+    hasPregnancyProfile: !!pregProfile,
   }
 }
 
@@ -125,7 +117,9 @@ export function useCouple(): UseCoupleReturn {
   const { user } = useAuth()
   const [couple, setCouple] = useState<Couple | null>(null)
   const [partner, setPartner] = useState<Partner | null>(null)
-  const [partnerSettings, setPartnerSettings] = useState<PartnerSettings | null>(null)
+  const [partnerSettings, setPartnerSettings] = useState<PrivacySettings | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [hasPregnancyProfile, setHasPregnancyProfile] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [fetchTrigger, setFetchTrigger] = useState(0)
@@ -134,262 +128,168 @@ export function useCouple(): UseCoupleReturn {
 
   const isInCouple = couple !== null
 
-  // Reset state when user logs out (detected by user becoming null)
-  // and fetch data when user logs in or refresh is triggered
   useEffect(() => {
     mountedRef.current = true
-
     const userId = user?.id ?? null
     const userChanged = prevUserIdRef.current !== userId
     prevUserIdRef.current = userId
 
     if (!user) {
-      // Only reset if user actually changed (not just a re-render)
       if (userChanged) {
-        setCouple(null)
-        setPartner(null)
-        setPartnerSettings(null)
-        setLoading(false)
+        setCouple(null); setPartner(null); setPartnerSettings(null)
+        setUserRole(null); setHasPregnancyProfile(false); setLoading(false)
       }
       return
     }
 
     let cancelled = false
-
     async function load() {
-      setLoading(true)
-      setError(null)
-
+      setLoading(true); setError(null)
       try {
         const data = await fetchCoupleData(user!.id)
         if (!cancelled && mountedRef.current) {
-          setCouple(data.couple)
-          setPartner(data.partner)
-          setPartnerSettings(data.partnerSettings)
+          setCouple(data.couple); setPartner(data.partner)
+          setPartnerSettings(data.partnerSettings); setUserRole(data.userRole)
+          setHasPregnancyProfile(data.hasPregnancyProfile)
         }
       } catch {
-        if (!cancelled && mountedRef.current) {
-          setError('Failed to load couple data.')
-        }
+        if (!cancelled && mountedRef.current) setError('Failed to load couple data.')
       } finally {
-        if (!cancelled && mountedRef.current) {
-          setLoading(false)
-        }
+        if (!cancelled && mountedRef.current) setLoading(false)
       }
     }
-
     load()
-
-    return () => {
-      cancelled = true
-      mountedRef.current = false
-    }
+    return () => { cancelled = true; mountedRef.current = false }
   }, [user, fetchTrigger])
 
   const refreshCouple = useCallback(async () => {
     setFetchTrigger((k) => k + 1)
   }, [])
 
-  const createGroup = useCallback(async (): Promise<{ inviteCode: string } | null> => {
-    if (!user) {
-      setError('You must be signed in to create a group.')
-      return null
-    }
-
-    setLoading(true)
-    setError(null)
+  const createGroup = useCallback(async (role: 'wife' | 'husband'): Promise<{ inviteCode: string } | null> => {
+    if (!user) { setError('You must be signed in.'); return null }
+    setLoading(true); setError(null)
 
     try {
       const inviteCode = generateInviteCode()
-
-      // Create the couple record
       const { data: coupleData, error: coupleError } = await supabase
-        .from('couples')
-        .insert({
-          invite_code: inviteCode,
-          created_by: user.id,
-        })
-        .select()
-        .single()
+        .from('couples').insert({ invite_code: inviteCode, created_by: user.id })
+        .select().single()
 
       if (coupleError || !coupleData) {
-        console.error('Error creating couple:', coupleError)
-        setError('Failed to create group. Please try again.')
-        setLoading(false)
-        return null
+        setError('Failed to create group.'); setLoading(false); return null
       }
 
-      // Add creator as a couple member
-      const { error: memberError } = await supabase.from('couple_members').insert({
-        couple_id: coupleData.id,
-        user_id: user.id,
-      })
+      const { error: memberError } = await supabase
+        .from('couple_members').insert({ couple_id: coupleData.id, user_id: user.id, role })
 
       if (memberError) {
-        console.error('Error adding creator to couple:', memberError)
-        setError('Failed to join the created group. Please try again.')
-        setLoading(false)
-        return null
+        setError('Failed to join created group.'); setLoading(false); return null
       }
 
-      setCouple(coupleData as Couple)
-      setLoading(false)
+      // Update profile role
+      await supabase.from('profiles').update({ role }).eq('id', user.id)
+
+      setCouple(coupleData as Couple); setUserRole(role); setLoading(false)
       return { inviteCode }
-    } catch (err) {
-      console.error('Unexpected error in createGroup:', err)
-      setError('An unexpected error occurred.')
-      setLoading(false)
-      return null
+    } catch {
+      setError('An unexpected error occurred.'); setLoading(false); return null
     }
   }, [user])
 
-  const joinWithCode = useCallback(async (code: string): Promise<{ success: boolean; message: string }> => {
-    if (!user) {
-      return { success: false, message: 'You must be signed in to join a group.' }
-    }
+  const joinWithCode = useCallback(async (code: string, role: 'wife' | 'husband'): Promise<{ success: boolean; message: string }> => {
+    if (!user) return { success: false, message: 'You must be signed in.' }
 
     const trimmedCode = code.trim().toUpperCase()
+    if (trimmedCode.length !== 6) return { success: false, message: 'Invite code must be 6 characters.' }
 
-    if (trimmedCode.length !== 6) {
-      return { success: false, message: 'Invite code must be 6 characters.' }
-    }
-
-    setLoading(true)
-    setError(null)
+    setLoading(true); setError(null)
 
     try {
-      // Look up the couple by invite code
       const { data: coupleData, error: coupleError } = await supabase
-        .from('couples')
-        .select('*')
-        .eq('invite_code', trimmedCode)
-        .single()
+        .from('couples').select('*').eq('invite_code', trimmedCode).single()
 
       if (coupleError || !coupleData) {
-        setLoading(false)
-        return { success: false, message: 'Invalid invite code. Please check and try again.' }
+        setLoading(false); return { success: false, message: 'Invalid invite code.' }
       }
 
       // Check member count
-      const { count, error: countError } = await supabase
-        .from('couple_members')
-        .select('*', { count: 'exact', head: true })
+      const { count } = await supabase
+        .from('couple_members').select('*', { count: 'exact', head: true })
         .eq('couple_id', coupleData.id)
-
-      if (countError) {
-        setLoading(false)
-        return { success: false, message: 'Failed to verify group. Please try again.' }
-      }
 
       if (count !== null && count >= 2) {
-        setLoading(false)
-        return { success: false, message: 'This group already has 2 members.' }
+        setLoading(false); return { success: false, message: 'This group already has 2 members.' }
       }
 
-      // Add user as couple member
-      const { error: memberError } = await supabase.from('couple_members').insert({
-        couple_id: coupleData.id,
-        user_id: user.id,
-      })
+      // Check role uniqueness
+      const { data: existingMembers } = await supabase
+        .from('couple_members').select('role').eq('couple_id', coupleData.id)
+
+      if (existingMembers && existingMembers.some(m => m.role === role)) {
+        setLoading(false)
+        return { success: false, message: `This group already has a ${role}. Please select the other role.` }
+      }
+
+      // Add member
+      const { error: memberError } = await supabase
+        .from('couple_members').insert({ couple_id: coupleData.id, user_id: user.id, role })
 
       if (memberError) {
-        console.error('Error joining couple:', memberError)
-        setLoading(false)
-        return { success: false, message: 'Failed to join the group. Please try again.' }
+        setLoading(false); return { success: false, message: 'Failed to join group.' }
       }
 
-      // Nullify invite code and set couple name
-      const { data: creatorProfile } = await supabase
-        .from('couple_members')
-        .select('user_id')
-        .eq('couple_id', coupleData.id)
-        .neq('user_id', user.id)
-        .single()
+      // Update profile role
+      await supabase.from('profiles').update({ role }).eq('id', user.id)
+
+      // Set couple name and null invite code
+      const { data: creatorMember } = await supabase
+        .from('couple_members').select('user_id')
+        .eq('couple_id', coupleData.id).neq('user_id', user.id).single()
 
       let coupleName: string | null = null
-      if (creatorProfile) {
-        const { data: creatorProfileData } = await supabase
-          .from('profiles')
-          .select('display_name')
-          .eq('id', creatorProfile.user_id)
-          .single()
+      if (creatorMember) {
+        const { data: creatorProfile } = await supabase
+          .from('profiles').select('display_name, role')
+          .eq('id', creatorMember.user_id).single()
+        const { data: joinerProfile } = await supabase
+          .from('profiles').select('display_name')
+          .eq('id', user.id).single()
 
-        const { data: joinerProfileData } = await supabase
-          .from('profiles')
-          .select('display_name')
-          .eq('id', user.id)
-          .single()
-
-        const name1 = creatorProfileData?.display_name || 'Partner 1'
-        const name2 = joinerProfileData?.display_name || 'Partner 2'
-        coupleName = `${name1} & ${name2}`
+        const wifeName = role === 'wife' ? (joinerProfile?.display_name || 'Wife') : (creatorProfile?.display_name || 'Wife')
+        const husbandName = role === 'husband' ? (joinerProfile?.display_name || 'Husband') : (creatorProfile?.display_name || 'Husband')
+        coupleName = `${wifeName} & ${husbandName}`
       }
 
-      await supabase
-        .from('couples')
-        .update({
-          invite_code: null,
-          name: coupleName,
-        })
-        .eq('id', coupleData.id)
-
-      // Refresh couple data
+      await supabase.from('couples').update({ invite_code: null, name: coupleName }).eq('id', coupleData.id)
       await refreshCouple()
-
       setLoading(false)
-      return { success: true, message: 'Successfully joined the group!' }
-    } catch (err) {
-      console.error('Unexpected error in joinWithCode:', err)
-      setError('An unexpected error occurred.')
-      setLoading(false)
+      return { success: true, message: 'Successfully joined!' }
+    } catch {
+      setError('An unexpected error occurred.'); setLoading(false)
       return { success: false, message: 'An unexpected error occurred.' }
     }
   }, [user, refreshCouple])
 
   const regenerateInviteCode = useCallback(async (): Promise<{ inviteCode: string } | null> => {
-    if (!user || !couple) {
-      setError('No couple found.')
-      return null
-    }
-
-    if (partner) {
-      setError('Cannot regenerate code — your partner has already joined.')
-      return null
-    }
+    if (!user || !couple) { setError('No couple found.'); return null }
+    if (partner) { setError('Cannot regenerate — partner already joined.'); return null }
 
     try {
       const newCode = generateInviteCode()
-
       const { error: updateError } = await supabase
-        .from('couples')
-        .update({ invite_code: newCode })
-        .eq('id', couple.id)
-
-      if (updateError) {
-        console.error('Error regenerating invite code:', updateError)
-        setError('Failed to regenerate invite code.')
-        return null
-      }
-
+        .from('couples').update({ invite_code: newCode }).eq('id', couple.id)
+      if (updateError) { setError('Failed to regenerate code.'); return null }
       setCouple({ ...couple, invite_code: newCode })
       return { inviteCode: newCode }
-    } catch (err) {
-      console.error('Unexpected error in regenerateInviteCode:', err)
-      setError('An unexpected error occurred.')
-      return null
+    } catch {
+      setError('An unexpected error occurred.'); return null
     }
   }, [user, couple, partner])
 
   return {
-    couple,
-    partner,
-    partnerSettings,
-    loading,
-    error,
-    createGroup,
-    joinWithCode,
-    regenerateInviteCode,
-    isInCouple,
-    refreshCouple,
+    couple, partner, partnerSettings, userRole, hasPregnancyProfile,
+    loading, error, createGroup, joinWithCode, regenerateInviteCode,
+    isInCouple, refreshCouple,
   }
 }

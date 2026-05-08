@@ -1,197 +1,113 @@
 /**
- * Settings page for DuoCheck.
- * Profile, sharing settings, data management, shortcut setup,
- * privacy, partner info, and account actions.
+ * Settings page for DuoCare.
+ * Profile, pregnancy profile, privacy, couple info, account.
  */
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useCouple } from '@/hooks/useCouple'
+import { usePregnancy } from '@/hooks/usePregnancy'
 import { supabase } from '@/lib/supabase'
 import AppHeader from '@/components/AppHeader'
 import BottomNav from '@/components/BottomNav'
-import ShortcutSetupCard from '@/components/ShortcutSetupCard'
-import PrivacySettingsCard from '@/components/PrivacySettingsCard'
-import {
-  User,
-  MapPin,
-  LogOut,
-  Trash2,
-  ChevronRight,
-  Smartphone,
-  Users,
-  AlertTriangle,
-  Copy,
-  RefreshCw,
-  Check,
-} from 'lucide-react'
+import { User, Baby, Shield, Users, LogOut, AlertTriangle, ArrowLeft } from 'lucide-react'
 
-interface SharingSettings {
-  id: string
-  user_id: string
-  sharing_enabled: boolean
-  shortcut_token: string | null
-  stale_threshold_hours: number
-  history_retention_days: number
-  updated_at: string
+interface PrivacySettings {
+  share_status_with_partner: boolean
+  email_alerts_enabled: boolean
 }
-
-const STALE_THRESHOLD_OPTIONS = [
-  { value: 1, label: '1 hour' },
-  { value: 3, label: '3 hours' },
-  { value: 6, label: '6 hours' },
-  { value: 12, label: '12 hours' },
-]
-
-const RETENTION_OPTIONS = [
-  { value: 7, label: '7 days' },
-  { value: 14, label: '14 days' },
-  { value: 30, label: '30 days' },
-  { value: 90, label: '90 days' },
-]
 
 export default function SettingsPage() {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
-  const { couple, partner, isInCouple, refreshCouple, regenerateInviteCode } = useCouple()
-  const [settings, setSettings] = useState<SharingSettings | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [toggling, setToggling] = useState(false)
-  const [displayName, setDisplayName] = useState('')
-  const [savingName, setSavingName] = useState(false)
-  const [nameSaved, setNameSaved] = useState(false)
-  const [signingOut, setSigningOut] = useState(false)
-  const [confirmDeleteHistory, setConfirmDeleteHistory] = useState(false)
-  const [deletingHistory, setDeletingHistory] = useState(false)
-  const [updatingThreshold, setUpdatingThreshold] = useState(false)
-  const [updatingRetention, setUpdatingRetention] = useState(false)
-  const [codeCopied, setCodeCopied] = useState(false)
-  const [regeneratingCode, setRegeneratingCode] = useState(false)
+  const { couple, partner, isInCouple, userRole, refreshCouple } = useCouple()
+  const { profile, updateProfile } = usePregnancy()
 
-  // Fetch settings and profile
+  const [privacy, setPrivacy] = useState<PrivacySettings | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [displayName, setDisplayName] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [profileSaved, setProfileSaved] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
+
+  // Pregnancy fields
+  const [dueDate, setDueDate] = useState('')
+  const [hospitalName, setHospitalName] = useState('')
+  const [clinicName, setClinicName] = useState('')
+  const [doctorName, setDoctorName] = useState('')
+  const [doctorPhone, setDoctorPhone] = useState('')
+  const [bloodType, setBloodType] = useState('')
+  const [riskNotes, setRiskNotes] = useState('')
+  const [savingPreg, setSavingPreg] = useState(false)
+  const [pregSaved, setPregSaved] = useState(false)
+
   useEffect(() => {
-    async function fetchSettings() {
+    async function load() {
       if (!user) return
 
-      const { data } = await supabase
-        .from('sharing_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-
-      if (data) {
-        setSettings(data as SharingSettings)
+      const { data: profileData } = await supabase
+        .from('profiles').select('display_name, full_name, phone')
+        .eq('id', user.id).single()
+      if (profileData) {
+        setDisplayName(profileData.display_name || '')
+        setFullName(profileData.full_name || '')
+        setPhone(profileData.phone || '')
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('id', user.id)
-        .single()
-
-      if (profile) {
-        setDisplayName(profile.display_name || '')
-      }
+      const { data: privData } = await supabase
+        .from('privacy_settings').select('share_status_with_partner, email_alerts_enabled')
+        .eq('user_id', user.id).single()
+      if (privData) setPrivacy(privData as PrivacySettings)
 
       setLoading(false)
     }
-
-    fetchSettings()
+    load()
   }, [user])
 
-  const toggleSharing = async () => {
-    if (!settings || !user) return
-    setToggling(true)
-
-    const newValue = !settings.sharing_enabled
-    const { error } = await supabase
-      .from('sharing_settings')
-      .update({ sharing_enabled: newValue, updated_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-
-    if (!error) {
-      setSettings({ ...settings, sharing_enabled: newValue })
+  useEffect(() => {
+    if (profile) {
+      setDueDate(profile.due_date || '')
+      setHospitalName(profile.hospital_name || '')
+      setClinicName(profile.clinic_name || '')
+      setDoctorName(profile.doctor_name || '')
+      setDoctorPhone(profile.doctor_phone || '')
+      setBloodType(profile.blood_type || '')
+      setRiskNotes(profile.risk_notes || '')
     }
-    setToggling(false)
-  }
+  }, [profile])
 
-  const updateStaleThreshold = async (hours: number) => {
-    if (!settings || !user) return
-    setUpdatingThreshold(true)
-
-    const { error } = await supabase
-      .from('sharing_settings')
-      .update({ stale_threshold_hours: hours, updated_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-
-    if (!error) {
-      setSettings({ ...settings, stale_threshold_hours: hours })
-    }
-    setUpdatingThreshold(false)
-  }
-
-  const updateRetention = async (days: number) => {
-    if (!settings || !user) return
-    setUpdatingRetention(true)
-
-    const { error } = await supabase
-      .from('sharing_settings')
-      .update({ history_retention_days: days, updated_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-
-    if (!error) {
-      setSettings({ ...settings, history_retention_days: days })
-    }
-    setUpdatingRetention(false)
-  }
-
-  const saveDisplayName = async () => {
-    if (!user || !displayName.trim()) return
-    setSavingName(true)
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({ display_name: displayName.trim() })
-      .eq('id', user.id)
-
-    if (!error) {
-      setNameSaved(true)
-      await refreshCouple()
-      setTimeout(() => setNameSaved(false), 2000)
-    }
-    setSavingName(false)
-  }
-
-  const handleRegenerateToken = async () => {
+  const saveProfile = async () => {
     if (!user) return
-    const newToken = crypto.randomUUID().replace(/-/g, '')
-
-    const { error } = await supabase
-      .from('sharing_settings')
-      .update({ shortcut_token: newToken, updated_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-
-    if (!error && settings) {
-      setSettings({ ...settings, shortcut_token: newToken })
-    }
+    setSavingProfile(true)
+    await supabase.from('profiles').update({
+      display_name: displayName.trim(), full_name: fullName.trim(), phone: phone.trim(),
+    }).eq('id', user.id)
+    setSavingProfile(false); setProfileSaved(true)
+    await refreshCouple()
+    setTimeout(() => setProfileSaved(false), 2000)
   }
 
-  const handleDeleteHistory = async () => {
-    if (!user || !couple) return
-    setDeletingHistory(true)
+  const savePregnancy = async () => {
+    if (!profile) return
+    setSavingPreg(true)
+    await updateProfile({
+      due_date: dueDate, hospital_name: hospitalName || null,
+      clinic_name: clinicName || null, doctor_name: doctorName || null,
+      doctor_phone: doctorPhone || null, blood_type: bloodType || null,
+      risk_notes: riskNotes || null,
+    } as any)
+    setSavingPreg(false); setPregSaved(true)
+    setTimeout(() => setPregSaved(false), 2000)
+  }
 
-    const { error } = await supabase
-      .from('location_updates')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('couple_id', couple.id)
-
-    if (error) {
-      console.error('Failed to delete history:', error)
-    }
-    setDeletingHistory(false)
-    setConfirmDeleteHistory(false)
+  const togglePrivacy = async (field: keyof PrivacySettings) => {
+    if (!user || !privacy) return
+    const newVal = !privacy[field]
+    await supabase.from('privacy_settings').update({ [field]: newVal }).eq('user_id', user.id)
+    setPrivacy({ ...privacy, [field]: newVal })
   }
 
   const handleSignOut = async () => {
@@ -200,345 +116,155 @@ export default function SettingsPage() {
     navigate('/login')
   }
 
+  const inputCls = 'w-full h-12 px-3 bg-cream border border-border-light rounded-xl text-text-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition'
+
   if (loading) {
     return (
       <div className="min-h-dvh bg-cream pb-24">
-        <AppHeader sharingEnabled={true} />
+        <AppHeader />
         <main className="max-w-lg mx-auto px-4 py-6">
-          <div className="animate-pulse text-text-muted text-center py-12">Loading settings…</div>
+          <div className="text-center py-12 text-text-muted animate-pulse">Loading settings…</div>
         </main>
-        <BottomNav activeRoute="/settings" />
+        <BottomNav activeRoute="/dashboard" />
       </div>
     )
   }
 
   return (
     <div className="min-h-dvh bg-cream pb-24">
-      <AppHeader sharingEnabled={settings?.sharing_enabled ?? true} />
-
+      <AppHeader subtitle="Settings" />
       <main className="max-w-lg mx-auto px-4 py-4 space-y-4">
-        {/* ── Profile Section ── */}
+        {/* Back button */}
+        <button onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-1 text-sm text-text-muted active:text-primary min-h-[44px]">
+          <ArrowLeft className="w-4 h-4" /> Back to Home
+        </button>
+
+        {/* Profile */}
         <section className="bg-card rounded-2xl border border-border-light p-5 shadow-sm">
           <h2 className="font-semibold text-text-dark mb-4 flex items-center gap-2">
-            <User className="w-5 h-5 text-primary" />
-            Profile
+            <User className="w-5 h-5 text-primary" /> Profile
           </h2>
-
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-text-muted mb-1">Email</label>
-              <p className="text-sm text-text-dark bg-cream rounded-lg px-3 py-2">
-                {user?.email}
-              </p>
+              <label className="block text-xs text-text-muted mb-1">Email</label>
+              <p className="text-sm text-text-dark bg-cream rounded-lg px-3 py-2">{user?.email}</p>
             </div>
             <div>
-              <label htmlFor="displayName" className="block text-sm text-text-muted mb-1">
-                Display Name
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="displayName"
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="flex-1 h-12 px-3 bg-cream border border-border-light rounded-xl text-text-dark focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
-                />
-                <button
-                  onClick={saveDisplayName}
-                  disabled={savingName}
-                  className="h-12 px-4 bg-primary hover:bg-primary-dark text-white font-semibold rounded-xl transition disabled:opacity-50 text-sm min-w-[80px]"
-                >
-                  {savingName ? '…' : nameSaved ? '✓' : 'Save'}
-                </button>
-              </div>
+              <label className="block text-xs text-text-muted mb-1">Role</label>
+              <p className="text-sm text-text-dark bg-cream rounded-lg px-3 py-2 capitalize">{userRole || 'Not set'}</p>
             </div>
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Display Name</label>
+              <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Full Name</label>
+              <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Phone</label>
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className={inputCls} />
+            </div>
+            <button onClick={saveProfile} disabled={savingProfile}
+              className="w-full h-12 bg-primary text-white font-semibold rounded-xl disabled:opacity-50 min-h-[44px]">
+              {savingProfile ? 'Saving…' : profileSaved ? '✓ Saved' : 'Save Profile'}
+            </button>
           </div>
         </section>
 
-        {/* ── Join Code Section ── */}
-        {isInCouple && couple?.invite_code && (
+        {/* Pregnancy Profile */}
+        {profile && (
           <section className="bg-card rounded-2xl border border-border-light p-5 shadow-sm">
             <h2 className="font-semibold text-text-dark mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary" />
-              Join Code
+              <Baby className="w-5 h-5 text-primary" /> Pregnancy Profile
             </h2>
-
-            <p className="text-xs text-text-muted mb-3">
-              Share this code with your partner so they can join your group.
-            </p>
-
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex-1 bg-cream border border-border-light rounded-xl px-4 py-3 text-center">
-                <span className="text-2xl font-bold tracking-[0.3em] text-primary">
-                  {couple.invite_code}
-                </span>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-text-muted mb-1">Due Date</label>
+                <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className={inputCls} />
               </div>
-              <button
-                onClick={async () => {
-                  if (!couple.invite_code) return
-                  await navigator.clipboard.writeText(couple.invite_code)
-                  setCodeCopied(true)
-                  setTimeout(() => setCodeCopied(false), 2000)
-                }}
-                className="h-12 w-12 flex items-center justify-center rounded-xl border border-border-light hover:bg-primary-light/30 transition min-h-[44px] min-w-[44px]"
-                aria-label="Copy join code"
-              >
-                {codeCopied ? (
-                  <Check className="w-5 h-5 text-success" />
-                ) : (
-                  <Copy className="w-5 h-5 text-text-muted" />
-                )}
+              <input type="text" placeholder="Hospital" value={hospitalName} onChange={e => setHospitalName(e.target.value)} className={inputCls} />
+              <input type="text" placeholder="Clinic" value={clinicName} onChange={e => setClinicName(e.target.value)} className={inputCls} />
+              <input type="text" placeholder="Doctor name" value={doctorName} onChange={e => setDoctorName(e.target.value)} className={inputCls} />
+              <input type="tel" placeholder="Doctor phone" value={doctorPhone} onChange={e => setDoctorPhone(e.target.value)} className={inputCls} />
+              <input type="text" placeholder="Blood type" value={bloodType} onChange={e => setBloodType(e.target.value)} className={inputCls} />
+              <textarea placeholder="Notes/risk factors" value={riskNotes} onChange={e => setRiskNotes(e.target.value)} rows={2}
+                className="w-full px-3 py-2 bg-cream border border-border-light rounded-xl text-text-dark text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <button onClick={savePregnancy} disabled={savingPreg}
+                className="w-full h-12 bg-primary text-white font-semibold rounded-xl disabled:opacity-50 min-h-[44px]">
+                {savingPreg ? 'Saving…' : pregSaved ? '✓ Saved' : 'Save Pregnancy Info'}
               </button>
             </div>
-
-            <button
-              onClick={async () => {
-                setRegeneratingCode(true)
-                await regenerateInviteCode()
-                setRegeneratingCode(false)
-              }}
-              disabled={regeneratingCode}
-              className="w-full h-10 border border-border-light text-text-muted text-sm font-medium rounded-xl hover:border-primary/30 hover:text-primary transition flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${regeneratingCode ? 'animate-spin' : ''}`} />
-              {regeneratingCode ? 'Regenerating…' : 'Regenerate Code'}
-            </button>
           </section>
         )}
 
-        {/* ── Waiting for Partner ── */}
-        {isInCouple && !partner && !couple?.invite_code && (
-          <section className="bg-card rounded-2xl border border-primary/20 p-5 shadow-sm">
-            <h2 className="font-semibold text-text-dark mb-3 flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary" />
-              Partner Access
-            </h2>
-            <p className="text-sm text-text-muted mb-3">
-              No partner has joined yet. Generate a join code to invite them.
-            </p>
-            <button
-              onClick={async () => {
-                setRegeneratingCode(true)
-                const result = await regenerateInviteCode()
-                setRegeneratingCode(false)
-                if (result?.inviteCode) {
-                  await navigator.clipboard.writeText(result.inviteCode)
-                  setCodeCopied(true)
-                  setTimeout(() => setCodeCopied(false), 2000)
-                }
-              }}
-              disabled={regeneratingCode}
-              className="w-full h-12 bg-primary hover:bg-primary-dark text-white font-semibold rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {regeneratingCode ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <Users className="w-4 h-4" />
-              )}
-              {regeneratingCode ? 'Generating…' : 'Generate Join Code'}
-            </button>
-          </section>
-        )}
-
-        {/* ── Sharing Settings ── */}
+        {/* Privacy */}
         <section className="bg-card rounded-2xl border border-border-light p-5 shadow-sm">
           <h2 className="font-semibold text-text-dark mb-4 flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-primary" />
-            Location Sharing
+            <Shield className="w-5 h-5 text-primary" /> Privacy
           </h2>
-
-          {/* Toggle */}
-          <div className="flex items-center justify-between py-2 mb-4">
-            <div>
-              <p className="font-medium text-text-dark">
-                {settings?.sharing_enabled ? 'Sharing ON' : 'Sharing OFF'}
-              </p>
-              <p className="text-xs text-text-muted">
-                {settings?.sharing_enabled
-                  ? 'Your partner can see your check-ins'
-                  : 'Your check-ins will not be shared'}
-              </p>
-            </div>
-            <button
-              onClick={toggleSharing}
-              disabled={toggling}
-              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors min-h-[44px] min-w-[52px] p-1 ${
-                settings?.sharing_enabled ? 'bg-success' : 'bg-gray-300'
-              }`}
-              role="switch"
-              aria-checked={settings?.sharing_enabled}
-              aria-label={settings?.sharing_enabled ? 'Disable sharing' : 'Enable sharing'}
-            >
-              <span
-                className={`inline-block h-6 w-6 rounded-full bg-white shadow transition-transform ${
-                  settings?.sharing_enabled ? 'translate-x-6' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Stale Threshold */}
-          <div className="mb-4">
-            <label className="block text-sm text-text-muted mb-1.5">
-              Stale threshold
-            </label>
-            <p className="text-xs text-text-muted mb-2">
-              How old a check-in must be before it shows a warning
-            </p>
-            <select
-              value={settings?.stale_threshold_hours ?? 3}
-              onChange={(e) => updateStaleThreshold(Number(e.target.value))}
-              disabled={updatingThreshold}
-              className="w-full h-12 px-3 bg-cream border border-border-light rounded-xl text-text-dark focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition appearance-none"
-            >
-              {STALE_THRESHOLD_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* History Retention */}
-          <div>
-            <label className="block text-sm text-text-muted mb-1.5">
-              History retention
-            </label>
-            <p className="text-xs text-text-muted mb-2">
-              Check-in history older than this will be automatically deleted
-            </p>
-            <select
-              value={settings?.history_retention_days ?? 30}
-              onChange={(e) => updateRetention(Number(e.target.value))}
-              disabled={updatingRetention}
-              className="w-full h-12 px-3 bg-cream border border-border-light rounded-xl text-text-dark focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition appearance-none"
-            >
-              {RETENTION_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </section>
-
-        {/* ── Data Management ── */}
-        <section className="bg-card rounded-2xl border border-border-light p-5 shadow-sm">
-          <h2 className="font-semibold text-text-dark mb-4 flex items-center gap-2">
-            <Trash2 className="w-5 h-5 text-primary" />
-            Data Management
-          </h2>
-
-          {!confirmDeleteHistory ? (
-            <button
-              onClick={() => setConfirmDeleteHistory(true)}
-              className="w-full h-12 border border-border-light text-text-muted font-medium rounded-xl hover:border-emergency/30 hover:text-emergency transition flex items-center justify-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete My Location History
-            </button>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-red-50">
-                <AlertTriangle className="w-4 h-4 text-emergency shrink-0 mt-0.5" />
-                <p className="text-xs text-red-800 leading-relaxed">
-                  This will permanently delete all of your check-in history. This action cannot be undone.
-                </p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-dark">Share status with partner</p>
+                <p className="text-xs text-text-muted">Allow partner to see your check-ins</p>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setConfirmDeleteHistory(false)}
-                  className="flex-1 h-12 border border-border-light text-text-muted font-medium rounded-xl transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteHistory}
-                  disabled={deletingHistory}
-                  className="flex-1 h-12 bg-emergency text-white font-semibold rounded-xl transition disabled:opacity-50"
-                >
-                  {deletingHistory ? 'Deleting…' : 'Delete All'}
-                </button>
-              </div>
+              <button onClick={() => togglePrivacy('share_status_with_partner')}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition min-h-[44px] min-w-[52px] p-1 ${
+                  privacy?.share_status_with_partner ? 'bg-success' : 'bg-gray-300'
+                }`} role="switch" aria-checked={privacy?.share_status_with_partner}>
+                <span className={`inline-block h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                  privacy?.share_status_with_partner ? 'translate-x-6' : 'translate-x-0'
+                }`} />
+              </button>
             </div>
-          )}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-dark">Email alerts</p>
+                <p className="text-xs text-text-muted">Receive email for emergency alerts</p>
+              </div>
+              <button onClick={() => togglePrivacy('email_alerts_enabled')}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition min-h-[44px] min-w-[52px] p-1 ${
+                  privacy?.email_alerts_enabled ? 'bg-success' : 'bg-gray-300'
+                }`} role="switch" aria-checked={privacy?.email_alerts_enabled}>
+                <span className={`inline-block h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                  privacy?.email_alerts_enabled ? 'translate-x-6' : 'translate-x-0'
+                }`} />
+              </button>
+            </div>
+          </div>
         </section>
 
-        {/* ── iPhone Shortcut Section ── */}
-        <section className="bg-card rounded-2xl border border-border-light p-5 shadow-sm">
-          <h2 className="font-semibold text-text-dark mb-4 flex items-center gap-2">
-            <Smartphone className="w-5 h-5 text-primary" />
-            iPhone Shortcuts
-          </h2>
-
-          <ShortcutSetupCard
-            token={settings?.shortcut_token ?? null}
-            onRegenerate={handleRegenerateToken}
-          />
-
-          <button
-            onClick={() => navigate('/shortcuts')}
-            className="w-full mt-3 flex items-center justify-between px-4 py-3 rounded-xl hover:bg-primary-light/30 transition min-h-[44px]"
-          >
-            <span className="text-sm font-medium text-primary">View Setup Guide</span>
-            <ChevronRight className="w-4 h-4 text-primary" />
-          </button>
-        </section>
-
-        {/* ── Privacy Explanation Card ── */}
-        <PrivacySettingsCard />
-
-        {/* ── Partner Access Section ── */}
+        {/* Couple Info */}
         {isInCouple && (
           <section className="bg-card rounded-2xl border border-border-light p-5 shadow-sm">
             <h2 className="font-semibold text-text-dark mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary" />
-              Partner Access
+              <Users className="w-5 h-5 text-primary" /> Couple Info
             </h2>
-
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-text-muted">Couple Name</p>
-                <p className="text-sm text-text-dark font-medium">
-                  {couple?.name || 'Unnamed couple'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-text-muted">Partner</p>
-                <p className="text-sm text-text-dark font-medium">
-                  {partner?.display_name || 'Waiting for partner…'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-text-muted">Joined</p>
-                <p className="text-sm text-text-dark font-medium">
-                  {couple?.created_at
-                    ? new Date(couple.created_at).toLocaleDateString()
-                    : 'Unknown'}
-                </p>
-              </div>
+            <div className="space-y-2 text-sm">
+              <div><span className="text-text-muted">Couple:</span> <span className="text-text-dark font-medium">{couple?.name || 'Unnamed'}</span></div>
+              <div><span className="text-text-muted">Partner:</span> <span className="text-text-dark font-medium">{partner?.display_name || 'Waiting…'}</span></div>
+              <div><span className="text-text-muted">Joined:</span> <span className="text-text-dark font-medium">
+                {couple?.created_at ? new Date(couple.created_at).toLocaleDateString() : 'Unknown'}
+              </span></div>
             </div>
           </section>
         )}
 
-        {/* ── Account Actions ── */}
+        {/* Account */}
         <section className="bg-card rounded-2xl border border-emergency/20 p-5 shadow-sm">
           <h2 className="font-semibold text-emergency mb-4 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5" />
-            Account
+            <AlertTriangle className="w-5 h-5" /> Account
           </h2>
-          <button
-            onClick={handleSignOut}
-            disabled={signingOut}
-            className="w-full h-12 border border-emergency/30 text-emergency font-semibold rounded-xl hover:bg-emergency/5 transition disabled:opacity-50 flex items-center justify-center gap-2"
-          >
+          <button onClick={handleSignOut} disabled={signingOut}
+            className="w-full h-12 border border-emergency/30 text-emergency font-semibold rounded-xl hover:bg-emergency/5 transition disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px]">
             <LogOut className="w-5 h-5" />
             {signingOut ? 'Signing out…' : 'Sign Out'}
           </button>
         </section>
       </main>
-
-      <BottomNav activeRoute="/settings" />
+      <BottomNav activeRoute="/dashboard" />
     </div>
   )
 }

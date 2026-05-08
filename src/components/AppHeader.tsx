@@ -1,17 +1,16 @@
 /**
- * AppHeader component for DuoCheck.
- * Orange gradient header with app name, sharing status badge, and settings button.
+ * AppHeader component for DuoCare.
+ * Warm orange gradient header with app name and settings button.
  */
 
 import { Settings } from 'lucide-react'
-import SharingStatusBadge from '@/components/SharingStatusBadge'
 
 interface AppHeaderProps {
-  sharingEnabled: boolean
+  subtitle?: string
   onSettingsClick?: () => void
 }
 
-export default function AppHeader({ sharingEnabled, onSettingsClick }: AppHeaderProps) {
+export default function AppHeader({ subtitle, onSettingsClick }: AppHeaderProps) {
   return (
     <header
       className="sticky top-0 z-50 flex items-center justify-between px-4 py-3"
@@ -19,11 +18,13 @@ export default function AppHeader({ sharingEnabled, onSettingsClick }: AppHeader
         background: 'linear-gradient(135deg, #D97756 0%, #B85C38 100%)',
       }}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col">
         <h1 className="text-xl font-bold text-white tracking-tight">
-          DuoCheck
+          DuoCare
         </h1>
-        <SharingStatusBadge enabled={sharingEnabled} />
+        {subtitle && (
+          <p className="text-xs text-white/70">{subtitle}</p>
+        )}
       </div>
 
       {onSettingsClick && (

@@ -1,11 +1,12 @@
 /**
- * BottomNav component for DuoCheck.
- * Fixed bottom navigation bar with 4 items: Home, Map, History, Settings.
+ * BottomNav component for DuoCare.
+ * Fixed bottom navigation bar with 5 tabs:
+ * Home, Check-In, Appointments, Tasks, Safety.
  * iPhone safe area support with bottom padding.
  */
 
 import { useNavigate } from 'react-router-dom'
-import { Home, Map, Clock, Settings } from 'lucide-react'
+import { Home, ClipboardPlus, Calendar, ListChecks, ShieldAlert } from 'lucide-react'
 
 interface NavItem {
   label: string
@@ -15,9 +16,10 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Home', icon: <Home className="w-5 h-5" />, route: '/dashboard' },
-  { label: 'Map', icon: <Map className="w-5 h-5" />, route: '/map' },
-  { label: 'History', icon: <Clock className="w-5 h-5" />, route: '/history' },
-  { label: 'Settings', icon: <Settings className="w-5 h-5" />, route: '/settings' },
+  { label: 'Check-In', icon: <ClipboardPlus className="w-5 h-5" />, route: '/check-in' },
+  { label: 'Appointments', icon: <Calendar className="w-5 h-5" />, route: '/appointments' },
+  { label: 'Tasks', icon: <ListChecks className="w-5 h-5" />, route: '/tasks' },
+  { label: 'Safety', icon: <ShieldAlert className="w-5 h-5" />, route: '/safety' },
 ]
 
 interface BottomNavProps {
@@ -33,14 +35,14 @@ export default function BottomNav({ activeRoute }: BottomNavProps) {
       role="navigation"
       aria-label="Main navigation"
     >
-      <div className="flex items-center justify-around px-2 pt-2 pb-2 safe-area-bottom">
+      <div className="flex items-center justify-around px-1 pt-2 pb-2">
         {NAV_ITEMS.map((item) => {
           const isActive = activeRoute === item.route
           return (
             <button
               key={item.route}
               onClick={() => navigate(item.route)}
-              className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] min-w-[44px] px-3 py-1 rounded-lg transition-colors ${
+              className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] min-w-[44px] px-2 py-1 rounded-lg transition-colors ${
                 isActive
                   ? 'text-primary'
                   : 'text-text-muted active:text-primary-dark'
