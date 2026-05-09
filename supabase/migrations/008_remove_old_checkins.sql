@@ -4,9 +4,12 @@
 -- Remove from realtime publication
 DO $$
 BEGIN
-  ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS pregnancy_checkins;
-EXCEPTION WHEN OTHERS THEN
-  -- Ignore if table was never published
+  IF EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND tablename = 'pregnancy_checkins'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime DROP TABLE pregnancy_checkins;
+  END IF;
 END $$;
 
 -- Drop table
