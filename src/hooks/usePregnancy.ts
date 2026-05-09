@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useCouple } from '@/hooks/useCouple'
-import { calculatePregnancyInfo, type PregnancyInfo, type PregnancyCheckin } from '@/lib/pregnancy'
+import { calculatePregnancyInfo, type PregnancyInfo } from '@/lib/pregnancy'
 
 interface PregnancyProfile {
   id: string
@@ -31,14 +31,10 @@ interface PregnancyProfile {
 interface UsePregnancyReturn {
   profile: PregnancyProfile | null
   pregnancyInfo: PregnancyInfo | null
-  latestCheckin: PregnancyCheckin | null
-  checkinHistory: PregnancyCheckin[]
   loading: boolean
   error: string | null
   createProfile: (data: Partial<PregnancyProfile>) => Promise<boolean>
   updateProfile: (data: Partial<PregnancyProfile>) => Promise<boolean>
-  submitCheckin: (data: Partial<PregnancyCheckin>) => Promise<boolean>
-  fetchHistory: (limit?: number) => Promise<void>
   refresh: () => Promise<void>
 }
 
@@ -47,8 +43,6 @@ export function usePregnancy(): UsePregnancyReturn {
   const { couple } = useCouple()
   const [profile, setProfile] = useState<PregnancyProfile | null>(null)
   const [pregnancyInfo, setPregnancyInfo] = useState<PregnancyInfo | null>(null)
-  const [latestCheckin, setLatestCheckin] = useState<PregnancyCheckin | null>(null)
-  const [checkinHistory, setCheckinHistory] = useState<PregnancyCheckin[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -65,14 +59,6 @@ export function usePregnancy(): UsePregnancyReturn {
         setProfile(profileData as PregnancyProfile)
         setPregnancyInfo(calculatePregnancyInfo(profileData.due_date))
       }
-
-      const { data: checkinData } = await supabase
-        .from('pregnancy_checkins').select('*')
-        .eq('couple_id', couple.id)
-        .order('created_at', { ascending: false })
-        .limit(1).maybeSingle()
-
-      setLatestCheckin((checkinData as PregnancyCheckin) ?? null)
     } catch {
       setError('Failed to load pregnancy data.')
     } finally {
@@ -113,37 +99,9 @@ export function usePregnancy(): UsePregnancyReturn {
     return true
   }, [profile, fetchData])
 
-  const submitCheckin = useCallback(async (data: Partial<PregnancyCheckin>): Promise<boolean> => {
-    if (!user || !couple) return false
-    setError(null)
-
-    const { error: insertError } = await supabase.from('pregnancy_checkins').insert({
-      couple_id: couple.id, user_id: user.id, ...data,
-    })
-
-    if (insertError) {
-      setError('Failed to submit check-in.')
-      return false
-    }
-    await fetchData()
-    return true
-  }, [user, couple, fetchData])
-
-  const fetchHistory = useCallback(async (limit = 30) => {
-    if (!couple) return
-
-    const { data } = await supabase
-      .from('pregnancy_checkins').select('*')
-      .eq('couple_id', couple.id)
-      .order('created_at', { ascending: false })
-      .limit(limit)
-
-    setCheckinHistory((data as PregnancyCheckin[]) ?? [])
-  }, [couple])
-
   return {
-    profile, pregnancyInfo, latestCheckin, checkinHistory,
-    loading, error, createProfile, updateProfile, submitCheckin,
-    fetchHistory, refresh: fetchData,
+    profile, pregnancyInfo,
+    loading, error, createProfile, updateProfile,
+    refresh: fetchData,
   }
 }

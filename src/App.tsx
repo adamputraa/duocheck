@@ -10,7 +10,6 @@ import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
 import CheckInPage from '@/pages/CheckInPage'
-import HistoryPage from '@/pages/HistoryPage'
 import AppointmentsPage from '@/pages/AppointmentsPage'
 import TasksPage from '@/pages/TasksPage'
 import HospitalBagPage from '@/pages/HospitalBagPage'
@@ -93,9 +92,6 @@ export default function App() {
         } />
         <Route path="/check-in" element={
           <AuthGuard><CoupleGuard><PregnancyGuard><CheckInPage /></PregnancyGuard></CoupleGuard></AuthGuard>
-        } />
-        <Route path="/history" element={
-          <AuthGuard><CoupleGuard><PregnancyGuard><HistoryPage /></PregnancyGuard></CoupleGuard></AuthGuard>
         } />
         <Route path="/appointments" element={
           <AuthGuard><CoupleGuard><PregnancyGuard><AppointmentsPage /></PregnancyGuard></CoupleGuard></AuthGuard>

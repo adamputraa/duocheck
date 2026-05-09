@@ -1,6 +1,6 @@
 /**
  * Realtime subscription hook for DuoCare.
- * Subscribes to pregnancy_checkins, emergency_events, appointments, care_tasks.
+ * Subscribes to emergency_events, appointments, care_tasks.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -21,7 +21,6 @@ interface EmergencyEvent {
 
 interface UseRealtimeReturn {
   emergencyEvents: EmergencyEvent[]
-  lastCheckinAt: string | null
   refresh: () => Promise<void>
 }
 
@@ -29,7 +28,6 @@ export function useRealtime(): UseRealtimeReturn {
   const { user } = useAuth()
   const [coupleId, setCoupleId] = useState<string | null>(null)
   const [emergencyEvents, setEmergencyEvents] = useState<EmergencyEvent[]>([])
-  const [lastCheckinAt, setLastCheckinAt] = useState<string | null>(null)
   const mountedRef = useRef(true)
 
   useEffect(() => {
@@ -55,17 +53,6 @@ export function useRealtime(): UseRealtimeReturn {
       if (!cancelled && mountedRef.current) {
         setEmergencyEvents((emergData as EmergencyEvent[]) ?? [])
       }
-
-      // Fetch latest check-in timestamp
-      const { data: checkinData } = await supabase
-        .from('pregnancy_checkins').select('created_at')
-        .eq('couple_id', cId)
-        .order('created_at', { ascending: false })
-        .limit(1).maybeSingle()
-
-      if (!cancelled && mountedRef.current) {
-        setLastCheckinAt(checkinData?.created_at ?? null)
-      }
     }
     load()
     return () => { cancelled = true; mountedRef.current = false }
@@ -77,12 +64,6 @@ export function useRealtime(): UseRealtimeReturn {
 
     const channel = supabase
       .channel(`duocare-${coupleId}`)
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'pregnancy_checkins',
-        filter: `couple_id=eq.${coupleId}`,
-      }, (payload) => {
-        setLastCheckinAt(payload.new.created_at)
-      })
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'emergency_events',
         filter: `couple_id=eq.${coupleId}`,
@@ -115,5 +96,5 @@ export function useRealtime(): UseRealtimeReturn {
     if (mountedRef.current) setEmergencyEvents((emergData as EmergencyEvent[]) ?? [])
   }, [coupleId])
 
-  return { emergencyEvents, lastCheckinAt, refresh }
+  return { emergencyEvents, refresh }
 }
