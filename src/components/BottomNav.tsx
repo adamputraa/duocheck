@@ -6,7 +6,7 @@
  */
 
 import { useNavigate } from 'react-router-dom'
-import { Home, ClipboardPlus, Calendar, ListChecks, ShieldAlert } from 'lucide-react'
+import { Home, Activity, Calendar, ListChecks, ShieldAlert } from 'lucide-react'
 
 interface NavItem {
   label: string
@@ -16,7 +16,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Home', icon: <Home className="w-5 h-5" />, route: '/dashboard' },
-  { label: 'Check-In', icon: <ClipboardPlus className="w-5 h-5" />, route: '/check-in' },
+  { label: 'Kicks', icon: <Activity className="w-5 h-5" />, route: '/check-in' },
   { label: 'Appointments', icon: <Calendar className="w-5 h-5" />, route: '/appointments' },
   { label: 'Tasks', icon: <ListChecks className="w-5 h-5" />, route: '/tasks' },
   { label: 'Safety', icon: <ShieldAlert className="w-5 h-5" />, route: '/safety' },

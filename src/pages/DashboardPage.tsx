@@ -3,7 +3,7 @@
  * Role-based dashboard: wife sees check-in prompt, husband sees wife's status.
  */
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useCouple } from '@/hooks/useCouple'
@@ -13,28 +13,29 @@ import { useTasks } from '@/hooks/useTasks'
 import { useHospitalBag } from '@/hooks/useHospitalBag'
 import { useRealtime } from '@/hooks/useRealtime'
 import { useEmergency } from '@/hooks/useEmergency'
+import { useKicks } from '@/hooks/useKicks'
+import { startOfDay, isAfter } from 'date-fns'
 import AppHeader from '@/components/AppHeader'
 import BottomNav from '@/components/BottomNav'
 import PregnancyWeekCard from '@/components/PregnancyWeekCard'
-import WifeTodayCard from '@/components/WifeTodayCard'
-import NeedFromHusbandCard from '@/components/NeedFromHusbandCard'
 import NextAppointmentCard from '@/components/NextAppointmentCard'
 import PendingTasksCard from '@/components/PendingTasksCard'
 import HospitalBagCard from '@/components/HospitalBagCard'
 import EmergencyBanner from '@/components/EmergencyBanner'
 import EmergencyHelpModal from '@/components/EmergencyHelpModal'
 import LoadingCard from '@/components/LoadingCard'
-import { ClipboardPlus, AlertTriangle } from 'lucide-react'
+import { Activity, AlertTriangle } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const { couple, partner, partnerSettings, userRole, loading: coupleLoading } = useCouple()
-  const { profile, pregnancyInfo, latestCheckin, loading: pregLoading } = usePregnancy()
+  const { profile, pregnancyInfo, loading: pregLoading } = usePregnancy()
   const { nextAppointment } = useAppointments()
   const { pending } = useTasks()
   const { completionPercent, checkedItems, totalItems } = useHospitalBag()
   const { emergencyEvents } = useRealtime()
   const { triggerEmergency, resolveEmergency } = useEmergency()
+  const { kicks } = useKicks()
   const navigate = useNavigate()
 
   const [showEmergencyModal, setShowEmergencyModal] = useState(false)
@@ -42,7 +43,11 @@ export default function DashboardPage() {
   const [emergencyError, setEmergencyError] = useState<string | null>(null)
 
   const isWife = userRole === 'wife'
-  const sharingEnabled = partnerSettings?.share_status_with_partner ?? true
+
+  const todayKicks = useMemo(() => {
+    const today = startOfDay(new Date())
+    return kicks.filter(k => isAfter(new Date(k.created_at), today)).length
+  }, [kicks])
 
   const handleEmergency = async (opts: { message?: string; includeLocation?: boolean }) => {
     setEmergencyLoading(true)
@@ -93,38 +98,36 @@ export default function DashboardPage() {
         )}
 
         {/* Greeting */}
-        <div className="bg-card rounded-2xl border border-border-light p-5 shadow-sm">
+        <div className="bg-white/80 backdrop-blur-md rounded-3xl border border-white p-6 shadow-md shadow-primary/5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-24 h-24 bg-primary/10 rounded-full blur-2xl"></div>
           {isWife ? (
             <>
-              <p className="text-lg font-bold text-text-dark mb-1">Track Baby Kicks 👶</p>
-              <p className="text-sm text-text-muted mb-3">Record every time you feel your baby kick</p>
+              <p className="text-xl font-bold text-text-dark mb-1 relative z-10">Track Baby Kicks 👶</p>
+              <p className="text-sm text-text-muted mb-4 relative z-10">Record every time you feel your baby kick</p>
               <button onClick={() => navigate('/check-in')}
-                className="w-full flex items-center justify-center gap-2 h-14 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl transition text-base min-h-[44px]">
-                <ClipboardPlus className="w-5 h-5" />
+                className="w-full flex items-center justify-center gap-2 h-14 bg-gradient-to-r from-primary to-primary-dark shadow-md text-white font-bold rounded-2xl transition active:scale-[0.98] text-base min-h-[44px] relative z-10">
+                <Activity className="w-5 h-5" />
                 Track Baby Kicks
               </button>
             </>
           ) : (
             <>
-              <p className="text-lg font-bold text-text-dark mb-1">Hi, {user?.user_metadata?.display_name || 'there'} 👋</p>
-              <p className="text-sm text-text-muted">Here's how your wife is doing today</p>
+              <p className="text-xl font-bold text-text-dark mb-1 relative z-10">Hi, {user?.user_metadata?.display_name || 'there'} 👋</p>
+              <p className="text-sm text-text-muted mb-4 relative z-10">Today's Baby Kicks: <strong className="text-primary">{todayKicks}</strong></p>
+              <button onClick={() => navigate('/check-in')}
+                className="w-full flex items-center justify-center gap-2 h-14 bg-white border-2 border-primary/20 text-primary hover:bg-primary/5 font-bold rounded-2xl transition active:scale-[0.98] text-base min-h-[44px] relative z-10">
+                <Activity className="w-5 h-5" />
+                View Kick Record
+              </button>
             </>
           )}
         </div>
 
         {/* Pregnancy Week Card */}
         {pregnancyInfo && profile && (
-          <PregnancyWeekCard info={pregnancyInfo} dueDate={profile.due_date} />
-        )}
-
-        {/* Wife Today (husband view) / Latest check-in (wife view) */}
-        {!isWife && (
-          <WifeTodayCard checkin={latestCheckin} sharingEnabled={sharingEnabled} />
-        )}
-
-        {/* Need from Husband */}
-        {!isWife && latestCheckin && sharingEnabled && (
-          <NeedFromHusbandCard need={latestCheckin.needs_from_husband} />
+          <div className="overflow-hidden rounded-3xl shadow-sm">
+            <PregnancyWeekCard info={pregnancyInfo} dueDate={profile.due_date} />
+          </div>
         )}
 
         {/* Next Appointment */}
