@@ -93,6 +93,9 @@ export default function SettingsPage() {
   const updateRole = async (newRole: 'wife' | 'husband') => {
     if (!user || userRole === newRole) return
     await supabase.from('profiles').update({ role: newRole }).eq('id', user.id)
+    if (isInCouple) {
+      await supabase.from('couple_members').update({ role: newRole }).eq('user_id', user.id)
+    }
     await refreshCouple()
   }
 
@@ -160,10 +163,12 @@ export default function SettingsPage() {
               <label className="block text-xs text-text-muted mb-1">Role</label>
               <div className="flex gap-2">
                 <button
+                  type="button"
                   onClick={() => updateRole('wife')}
                   className={`flex-1 py-2 rounded-xl border text-sm font-semibold transition ${userRole === 'wife' ? 'bg-primary text-white border-primary' : 'bg-white text-text-dark border-border-light'}`}
                 >👩 Wife</button>
                 <button
+                  type="button"
                   onClick={() => updateRole('husband')}
                   className={`flex-1 py-2 rounded-xl border text-sm font-semibold transition ${userRole === 'husband' ? 'bg-primary text-white border-primary' : 'bg-white text-text-dark border-border-light'}`}
                 >👨 Husband</button>

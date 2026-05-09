@@ -96,12 +96,12 @@ export default function DashboardPage() {
         <div className="bg-card rounded-2xl border border-border-light p-5 shadow-sm">
           {isWife ? (
             <>
-              <p className="text-lg font-bold text-text-dark mb-1">How are you today? 💕</p>
-              <p className="text-sm text-text-muted mb-3">Share how you're feeling with your husband</p>
+              <p className="text-lg font-bold text-text-dark mb-1">Track Baby Kicks 👶</p>
+              <p className="text-sm text-text-muted mb-3">Record every time you feel your baby kick</p>
               <button onClick={() => navigate('/check-in')}
                 className="w-full flex items-center justify-center gap-2 h-14 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl transition text-base min-h-[44px]">
                 <ClipboardPlus className="w-5 h-5" />
-                New Check-In
+                Track Baby Kicks
               </button>
             </>
           ) : (
