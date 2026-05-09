@@ -90,6 +90,12 @@ export default function SettingsPage() {
     setTimeout(() => setProfileSaved(false), 2000)
   }
 
+  const updateRole = async (newRole: 'wife' | 'husband') => {
+    if (!user || userRole === newRole) return
+    await supabase.from('profiles').update({ role: newRole }).eq('id', user.id)
+    await refreshCouple()
+  }
+
   const savePregnancy = async () => {
     if (!profile) return
     setSavingPreg(true)
@@ -152,7 +158,16 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className="block text-xs text-text-muted mb-1">Role</label>
-              <p className="text-sm text-text-dark bg-cream rounded-lg px-3 py-2 capitalize">{userRole || 'Not set'}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => updateRole('wife')}
+                  className={`flex-1 py-2 rounded-xl border text-sm font-semibold transition ${userRole === 'wife' ? 'bg-primary text-white border-primary' : 'bg-white text-text-dark border-border-light'}`}
+                >👩 Wife</button>
+                <button
+                  onClick={() => updateRole('husband')}
+                  className={`flex-1 py-2 rounded-xl border text-sm font-semibold transition ${userRole === 'husband' ? 'bg-primary text-white border-primary' : 'bg-white text-text-dark border-border-light'}`}
+                >👨 Husband</button>
+              </div>
             </div>
             <div>
               <label className="block text-xs text-text-muted mb-1">Display Name</label>
