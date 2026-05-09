@@ -1,8 +1,6 @@
 /**
  * BottomNav component for DuoCare.
- * Fixed bottom navigation bar with 5 tabs:
- * Home, Check-In, Appointments, Tasks, Safety.
- * iPhone safe area support with bottom padding.
+ * Modern floating glass pill navigation.
  */
 
 import { useNavigate } from 'react-router-dom'
@@ -17,7 +15,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Home', icon: <Home className="w-5 h-5" />, route: '/dashboard' },
   { label: 'Kicks', icon: <Activity className="w-5 h-5" />, route: '/check-in' },
-  { label: 'Appointments', icon: <Calendar className="w-5 h-5" />, route: '/appointments' },
+  { label: 'Calendar', icon: <Calendar className="w-5 h-5" />, route: '/appointments' },
   { label: 'Tasks', icon: <ListChecks className="w-5 h-5" />, route: '/tasks' },
   { label: 'Safety', icon: <ShieldAlert className="w-5 h-5" />, route: '/safety' },
 ]
@@ -30,34 +28,31 @@ export default function BottomNav({ activeRoute }: BottomNavProps) {
   const navigate = useNavigate()
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border-light"
-      role="navigation"
-      aria-label="Main navigation"
-    >
-      <div className="flex items-center justify-around px-1 pt-2 pb-2">
+    <nav className="fixed bottom-6 left-0 right-0 z-50 px-4 pointer-events-none">
+      <div className="glass mx-auto max-w-lg rounded-[32px] p-2 flex items-center justify-around shadow-2xl shadow-primary/10 pointer-events-auto">
         {NAV_ITEMS.map((item) => {
           const isActive = activeRoute === item.route
           return (
             <button
               key={item.route}
               onClick={() => navigate(item.route)}
-              className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] min-w-[44px] px-2 py-1 rounded-lg transition-colors ${
+              className={`flex flex-col items-center justify-center gap-1 min-h-[50px] min-w-[50px] px-2 rounded-2xl transition-all tap-effect ${
                 isActive
-                  ? 'text-primary'
-                  : 'text-text-muted active:text-primary-dark'
+                  ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-110'
+                  : 'text-text-muted active:text-primary'
               }`}
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
             >
-              {item.icon}
-              <span className="text-[10px] font-medium leading-tight">{item.label}</span>
+              <div className={isActive ? 'scale-110' : ''}>{item.icon}</div>
+              <span className={`text-[9px] font-bold uppercase tracking-tighter ${isActive ? 'block' : 'hidden'}`}>
+                {item.label}
+              </span>
             </button>
           )
         })}
       </div>
-      {/* iPhone safe area bottom padding */}
-      <div className="h-[env(safe-area-inset-bottom)]" />
     </nav>
   )
 }
+

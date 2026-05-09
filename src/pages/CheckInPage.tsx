@@ -62,107 +62,109 @@ export default function CheckInPage() {
 
   if (!isInCouple) {
     return (
-      <div className="min-h-dvh bg-cream pb-24">
+      <div className="min-h-dvh flex flex-col items-center justify-center p-6 text-center">
         <AppHeader subtitle="Kick Record" onSettingsClick={() => navigate('/settings')} />
-        <main className="max-w-lg mx-auto px-4 py-6 text-center">
-          <p className="text-text-muted">You need to join a couple to track kicks.</p>
-        </main>
+        <div className="glass rounded-[32px] p-8 max-w-sm">
+          <p className="text-text-muted font-bold">You need to join a couple to track kicks.</p>
+        </div>
         <BottomNav activeRoute="/check-in" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-dvh bg-cream pb-24">
+    <div className="min-h-dvh pb-32">
       <AppHeader subtitle="Kick Record" onSettingsClick={() => navigate('/settings')} />
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
+      
+      <main className="max-w-lg mx-auto px-4 py-6 space-y-8">
         
-        {/* Today's Summary */}
-        <div className="bg-white/60 backdrop-blur-md rounded-3xl border border-white p-6 shadow-md shadow-primary/5 text-center relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-primary/10 rounded-full blur-2xl"></div>
-          <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-24 h-24 bg-primary/5 rounded-full blur-xl"></div>
-          <h2 className="relative z-10 text-xs font-bold text-text-muted uppercase tracking-widest mb-1">Kicks Today</h2>
-          <p className="relative z-10 text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-primary to-primary-dark mb-1">{todayCount}</p>
-          <p className="relative z-10 text-xs font-medium text-text-muted/80">Since midnight</p>
+        {/* Today's Counter */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity"></div>
+          <div className="glass rounded-[40px] p-10 shadow-2xl shadow-primary/10 text-center relative z-10 border-white/60">
+            <h2 className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-3">Total Kicks Today</h2>
+            <div className="flex items-center justify-center gap-2">
+              <p className="text-7xl font-black text-primary tracking-tighter">{todayCount}</p>
+            </div>
+            <p className="text-xs font-bold text-text-muted/60 mt-2 italic">Updated just now</p>
+          </div>
         </div>
 
         {/* Kick Button (Wife Only) */}
         {userRole === 'wife' && (
-          <div className="flex justify-center my-10">
+          <div className="flex justify-center relative">
+            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse"></div>
             <button
               onClick={handleKick}
               disabled={saving}
-              className="relative group w-56 h-56 rounded-full bg-gradient-to-br from-primary-light via-primary to-primary-dark shadow-[0_10px_40px_-10px_rgba(217,119,86,0.6)] flex items-center justify-center transform transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100"
+              className="relative group w-60 h-60 rounded-full glass shadow-[0_20px_50px_-10px_rgba(217,119,86,0.3)] flex items-center justify-center transition-all tap-effect disabled:opacity-50 border-white/80"
             >
-              <div className="absolute inset-0 rounded-full bg-white/30 blur-md group-active:blur-sm transition-all duration-300 group-hover:bg-white/40 group-active:bg-white/10" />
-              <div className="absolute -inset-2 rounded-full bg-primary/20 animate-pulse -z-10" />
+              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-primary-light to-primary shadow-inner opacity-90 group-hover:opacity-100 transition-opacity"></div>
               <div className="relative flex flex-col items-center">
-                <span className="text-6xl mb-2 drop-shadow-sm">👶</span>
-                <span className="text-white font-extrabold tracking-widest text-xl drop-shadow-md">
-                  {saving ? 'SAVING' : 'KICK!'}
+                <div className="text-6xl mb-1 drop-shadow-xl transform group-hover:scale-110 transition-transform">👶</div>
+                <span className="text-white font-black tracking-[0.1em] text-xl drop-shadow-md">
+                  {saving ? 'RECORDING' : 'KICK!'}
                 </span>
               </div>
             </button>
           </div>
         )}
 
-        {/* Hourly Trend (Last 24h) */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-white p-5 shadow-md shadow-primary/5">
-          <h3 className="font-bold text-text-dark mb-4 text-sm tracking-wide">Hourly Trend (Last 24h)</h3>
-          {loading ? (
-            <p className="text-sm text-text-muted text-center py-4">Loading...</p>
-          ) : (
-            <div className="flex items-end h-32 gap-1 mt-4 overflow-x-auto pb-2 scrollbar-hide">
-              {hourlyData.map((h, i) => {
-                const height = `${(h.count / maxHourly) * 100}%`
-                return (
-                  <div key={i} className="flex-1 flex flex-col justify-end items-center min-w-[20px] group relative">
-                    <div className="w-full bg-primary/20 rounded-t-sm transition-all group-hover:bg-primary/40" 
-                         style={{ height: h.count > 0 ? height : '2px' }}>
+        {/* Trends Container */}
+        <div className="grid grid-cols-1 gap-6">
+          {/* Hourly Trend */}
+          <div className="glass rounded-[32px] p-6 shadow-xl shadow-black/5 border-white/60">
+            <h3 className="font-black text-text-dark text-sm uppercase tracking-wider mb-6">Hourly Activity</h3>
+            {loading ? (
+              <div className="h-32 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <div className="flex items-end h-32 gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
+                {hourlyData.map((h, i) => {
+                  const height = `${(h.count / maxHourly) * 100}%`
+                  return (
+                    <div key={i} className="flex-1 flex flex-col justify-end items-center min-w-[20px] group relative">
+                      <div className="w-full bg-primary/20 rounded-full transition-all group-hover:bg-primary/50" 
+                           style={{ height: h.count > 0 ? height : '4px' }}>
+                      </div>
                     </div>
-                    {/* Tooltip on hover */}
-                    <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded pointer-events-none transition">
-                      {h.count}
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
+            )}
+            <div className="flex justify-between mt-3 text-[10px] font-black text-text-muted/60 uppercase tracking-tighter">
+              <span>24h Ago</span>
+              <span>Now</span>
             </div>
-          )}
-          <div className="flex justify-between mt-2 text-[10px] text-text-muted font-medium">
-            <span>{hourlyData[0]?.label}</span>
-            <span>{hourlyData[11]?.label}</span>
-            <span>{hourlyData[23]?.label}</span>
           </div>
-        </div>
 
-        {/* Daily Trend (Last 7 Days) */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-white p-5 shadow-md shadow-primary/5">
-          <h3 className="font-bold text-text-dark mb-4 text-sm tracking-wide">Daily Trend (Last 7 Days)</h3>
-          {loading ? (
-            <p className="text-sm text-text-muted text-center py-4">Loading...</p>
-          ) : (
-            <div className="flex items-end h-40 gap-2 mt-4">
-              {dailyData.map((d, i) => {
-                const height = `${(d.count / maxDaily) * 100}%`
-                const isToday = i === dailyData.length - 1
-                return (
-                  <div key={i} className="flex-1 flex flex-col justify-end items-center group relative">
-                    <div className={`w-full rounded-t-md transition-all ${isToday ? 'bg-primary' : 'bg-primary/40 group-hover:bg-primary/60'}`} 
-                         style={{ height: d.count > 0 ? height : '4px' }}>
+          {/* Daily Trend */}
+          <div className="glass rounded-[32px] p-6 shadow-xl shadow-black/5 border-white/60">
+            <h3 className="font-black text-text-dark text-sm uppercase tracking-wider mb-6">Weekly Progress</h3>
+            {loading ? (
+              <div className="h-40 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <div className="flex items-end h-40 gap-3 mt-4 px-2">
+                {dailyData.map((d, i) => {
+                  const height = `${(d.count / maxDaily) * 100}%`
+                  const isToday = i === dailyData.length - 1
+                  return (
+                    <div key={i} className="flex-1 flex flex-col justify-end items-center group relative">
+                      <div className={`w-full rounded-full transition-all ${isToday ? 'bg-primary shadow-lg shadow-primary/30' : 'bg-primary/20'}`} 
+                           style={{ height: d.count > 0 ? height : '8px' }}>
+                      </div>
+                      <span className={`text-[10px] mt-4 font-black uppercase tracking-tighter ${isToday ? 'text-primary' : 'text-text-muted/60'}`}>
+                        {d.label}
+                      </span>
                     </div>
-                    {/* Count above bar */}
-                    <span className="text-[10px] font-bold text-text-dark mt-1 absolute bottom-full mb-1">
-                      {d.count > 0 ? d.count : ''}
-                    </span>
-                    <span className={`text-xs mt-2 font-medium ${isToday ? 'text-primary' : 'text-text-muted'}`}>
-                      {d.label}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
       </main>
@@ -170,3 +172,4 @@ export default function CheckInPage() {
     </div>
   )
 }
+

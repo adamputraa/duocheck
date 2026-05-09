@@ -1,6 +1,5 @@
 /**
  * Dashboard page for DuoCare.
- * Role-based dashboard: wife sees check-in prompt, husband sees wife's status.
  */
 
 import { useState, useMemo } from 'react'
@@ -24,11 +23,11 @@ import HospitalBagCard from '@/components/HospitalBagCard'
 import EmergencyBanner from '@/components/EmergencyBanner'
 import EmergencyHelpModal from '@/components/EmergencyHelpModal'
 import LoadingCard from '@/components/LoadingCard'
-import { Activity, AlertTriangle } from 'lucide-react'
+import { Activity, AlertTriangle, Sparkles } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const { couple, partner, partnerSettings, userRole, loading: coupleLoading } = useCouple()
+  const { partner, userRole, loading: coupleLoading } = useCouple()
   const { profile, pregnancyInfo, loading: pregLoading } = usePregnancy()
   const { nextAppointment } = useAppointments()
   const { pending } = useTasks()
@@ -63,24 +62,20 @@ export default function DashboardPage() {
 
   if (coupleLoading || pregLoading) {
     return (
-      <div className="min-h-dvh bg-cream pb-24">
-        <AppHeader subtitle={pregnancyInfo ? `Week ${pregnancyInfo.currentWeek}` : undefined} />
-        <main className="max-w-lg mx-auto px-4 py-6">
-          <LoadingCard message="Loading dashboard…" />
-        </main>
-        <BottomNav activeRoute="/dashboard" />
+      <div className="min-h-dvh flex flex-col items-center justify-center">
+        <LoadingCard message="Initializing DuoCare..." />
       </div>
     )
   }
 
   return (
-    <div className="min-h-dvh bg-cream pb-24">
+    <div className="min-h-dvh pb-32">
       <AppHeader
         subtitle={pregnancyInfo ? `Week ${pregnancyInfo.currentWeek} • ${pregnancyInfo.trimester}` : undefined}
         onSettingsClick={() => navigate('/settings')}
       />
 
-      <main className="max-w-lg mx-auto px-4 py-4 space-y-4">
+      <main className="max-w-lg mx-auto px-4 py-4 space-y-5">
         {/* Emergency Banners */}
         {emergencyEvents.map(event => (
           <EmergencyBanner
@@ -92,32 +87,42 @@ export default function DashboardPage() {
         ))}
 
         {emergencyError && (
-          <div className="bg-warning/10 border border-warning/30 rounded-xl p-3">
-            <p className="text-sm text-amber-800">{emergencyError}</p>
+          <div className="glass-dark border-emergency/30 rounded-[24px] p-4 text-center">
+            <p className="text-sm font-bold text-emergency">{emergencyError}</p>
           </div>
         )}
 
-        {/* Greeting */}
-        <div className="bg-white/80 backdrop-blur-md rounded-3xl border border-white p-6 shadow-md shadow-primary/5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-24 h-24 bg-primary/10 rounded-full blur-2xl"></div>
+        {/* Greeting / Primary Action */}
+        <div className="glass rounded-[32px] p-7 shadow-2xl shadow-primary/5 relative overflow-hidden border-white/60">
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl"></div>
+          
           {isWife ? (
             <>
-              <p className="text-xl font-bold text-text-dark mb-1 relative z-10">Track Baby Kicks 👶</p>
-              <p className="text-sm text-text-muted mb-4 relative z-10">Record every time you feel your baby kick</p>
+              <div className="flex items-center gap-2 mb-1 relative z-10">
+                <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                <p className="text-xl font-black text-text-dark tracking-tight">Baby is active!</p>
+              </div>
+              <p className="text-sm font-medium text-text-muted mb-5 relative z-10">Don't forget to record those precious kicks today.</p>
               <button onClick={() => navigate('/check-in')}
-                className="w-full flex items-center justify-center gap-2 h-14 bg-gradient-to-r from-primary to-primary-dark shadow-md text-white font-bold rounded-2xl transition active:scale-[0.98] text-base min-h-[44px] relative z-10">
+                className="w-full flex items-center justify-center gap-3 h-14 bg-primary shadow-[0_10px_25px_-5px_rgba(217,119,86,0.4)] text-white font-black rounded-2xl transition-all tap-effect text-base relative z-10">
                 <Activity className="w-5 h-5" />
-                Track Baby Kicks
+                Track Kick Record
               </button>
             </>
           ) : (
             <>
-              <p className="text-xl font-bold text-text-dark mb-1 relative z-10">Hi, {user?.user_metadata?.display_name || 'there'} 👋</p>
-              <p className="text-sm text-text-muted mb-4 relative z-10">Today's Baby Kicks: <strong className="text-primary">{todayKicks}</strong></p>
+              <p className="text-xl font-black text-text-dark mb-1 relative z-10">Hi, {user?.user_metadata?.display_name || 'there'} 👋</p>
+              <div className="flex items-center gap-2 mb-5 relative z-10">
+                <div className="px-2 py-0.5 bg-primary/10 rounded-full">
+                  <p className="text-[10px] font-black text-primary uppercase tracking-widest">Live Updates</p>
+                </div>
+                <p className="text-sm font-medium text-text-muted">Today's Kicks: <strong className="text-primary">{todayKicks}</strong></p>
+              </div>
               <button onClick={() => navigate('/check-in')}
-                className="w-full flex items-center justify-center gap-2 h-14 bg-white border-2 border-primary/20 text-primary hover:bg-primary/5 font-bold rounded-2xl transition active:scale-[0.98] text-base min-h-[44px] relative z-10">
+                className="w-full flex items-center justify-center gap-3 h-14 bg-white/50 border-2 border-primary/20 text-primary font-black rounded-2xl transition-all tap-effect text-base relative z-10 backdrop-blur-sm">
                 <Activity className="w-5 h-5" />
-                View Kick Record
+                View Activity Log
               </button>
             </>
           )}
@@ -125,30 +130,38 @@ export default function DashboardPage() {
 
         {/* Pregnancy Week Card */}
         {pregnancyInfo && profile && (
-          <div className="overflow-hidden rounded-3xl shadow-sm">
+          <div className="glass rounded-[32px] overflow-hidden shadow-xl shadow-black/5 border-white/60">
             <PregnancyWeekCard info={pregnancyInfo} dueDate={profile.due_date} />
           </div>
         )}
 
-        {/* Next Appointment */}
-        <NextAppointmentCard appointment={nextAppointment} onViewAll={() => navigate('/appointments')} />
+        <div className="grid grid-cols-1 gap-5">
+          {/* Next Appointment */}
+          <div className="glass rounded-[32px] p-1 border-white/60">
+            <NextAppointmentCard appointment={nextAppointment} onViewAll={() => navigate('/appointments')} />
+          </div>
 
-        {/* Pending Tasks */}
-        <PendingTasksCard tasks={pending} onViewAll={() => navigate('/tasks')} />
+          {/* Pending Tasks */}
+          <div className="glass rounded-[32px] p-1 border-white/60">
+            <PendingTasksCard tasks={pending} onViewAll={() => navigate('/tasks')} />
+          </div>
 
-        {/* Hospital Bag */}
-        <HospitalBagCard
-          completionPercent={completionPercent}
-          checkedItems={checkedItems}
-          totalItems={totalItems}
-          onView={() => navigate('/hospital-bag')}
-        />
+          {/* Hospital Bag */}
+          <div className="glass rounded-[32px] p-1 border-white/60">
+            <HospitalBagCard
+              completionPercent={completionPercent}
+              checkedItems={checkedItems}
+              totalItems={totalItems}
+              onView={() => navigate('/hospital-bag')}
+            />
+          </div>
+        </div>
 
         {/* Emergency Help Button */}
         <button onClick={() => setShowEmergencyModal(true)}
-          className="w-full flex items-center justify-center gap-2 h-14 bg-emergency text-white font-bold rounded-xl shadow-lg shadow-red-200 active:bg-red-600 transition min-h-[44px]">
-          <AlertTriangle className="w-5 h-5" />
-          Emergency Help
+          className="w-full flex items-center justify-center gap-3 h-16 glass-dark border-emergency/20 text-emergency font-black rounded-[24px] shadow-xl shadow-emergency/5 tap-effect transition-all active:bg-emergency/5">
+          <AlertTriangle className="w-6 h-6 animate-bounce" />
+          <span className="tracking-tighter text-lg uppercase">Emergency Help</span>
         </button>
       </main>
 
@@ -166,3 +179,4 @@ export default function DashboardPage() {
     </div>
   )
 }
+

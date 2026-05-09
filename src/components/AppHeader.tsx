@@ -1,6 +1,6 @@
 /**
  * AppHeader component for DuoCare.
- * Warm orange gradient header with app name and settings button.
+ * Modern floating glass header.
  */
 
 import { Settings } from 'lucide-react'
@@ -12,30 +12,28 @@ interface AppHeaderProps {
 
 export default function AppHeader({ subtitle, onSettingsClick }: AppHeaderProps) {
   return (
-    <header
-      className="sticky top-0 z-50 flex items-center justify-between px-4 py-3"
-      style={{
-        background: 'linear-gradient(135deg, #D97756 0%, #B85C38 100%)',
-      }}
-    >
-      <div className="flex flex-col">
-        <h1 className="text-xl font-bold text-white tracking-tight">
-          DuoCare
-        </h1>
-        {subtitle && (
-          <p className="text-xs text-white/70">{subtitle}</p>
+    <header className="sticky top-0 z-50 px-4 pt-4 pb-2 bg-transparent pointer-events-none">
+      <div className="glass mx-auto max-w-lg rounded-[24px] px-5 py-3 flex items-center justify-between shadow-lg shadow-primary/5 pointer-events-auto">
+        <div className="flex flex-col">
+          <h1 className="text-lg font-extrabold text-primary tracking-tight leading-tight">
+            DuoCare
+          </h1>
+          {subtitle && (
+            <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{subtitle}</p>
+          )}
+        </div>
+
+        {onSettingsClick && (
+          <button
+            onClick={onSettingsClick}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 active:bg-primary/20 transition-all tap-effect"
+            aria-label="Settings"
+          >
+            <Settings className="w-5 h-5 text-primary" />
+          </button>
         )}
       </div>
-
-      {onSettingsClick && (
-        <button
-          onClick={onSettingsClick}
-          className="flex items-center justify-center w-11 h-11 rounded-full active:bg-white/20 transition-colors"
-          aria-label="Settings"
-        >
-          <Settings className="w-5 h-5 text-white" />
-        </button>
-      )}
     </header>
   )
 }
+
