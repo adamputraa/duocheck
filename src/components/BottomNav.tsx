@@ -1,6 +1,6 @@
 /**
  * BottomNav component for DuoCare.
- * Modern floating glass pill navigation.
+ * Modern solid bottom navigation.
  */
 
 import { useNavigate } from 'react-router-dom'
@@ -28,24 +28,24 @@ export default function BottomNav({ activeRoute }: BottomNavProps) {
   const navigate = useNavigate()
 
   return (
-    <nav className="fixed bottom-6 left-0 right-0 z-50 px-4 pointer-events-none">
-      <div className="glass mx-auto max-w-lg rounded-[32px] p-2 flex items-center justify-around shadow-2xl shadow-primary/10 pointer-events-auto">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 px-2 pb-safe-bottom">
+      <div className="mx-auto max-w-lg h-16 flex items-center justify-around">
         {NAV_ITEMS.map((item) => {
           const isActive = activeRoute === item.route
           return (
             <button
               key={item.route}
               onClick={() => navigate(item.route)}
-              className={`flex flex-col items-center justify-center gap-1 min-h-[50px] min-w-[50px] px-2 rounded-2xl transition-all tap-effect ${
+              className={`flex flex-col items-center justify-center gap-1 flex-1 min-h-[50px] transition-all tap-effect ${
                 isActive
-                  ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-110'
-                  : 'text-text-muted active:text-primary'
+                  ? 'text-primary'
+                  : 'text-text-muted active:text-text-dark'
               }`}
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
             >
-              <div className={isActive ? 'scale-110' : ''}>{item.icon}</div>
-              <span className={`text-[9px] font-bold uppercase tracking-tighter ${isActive ? 'block' : 'hidden'}`}>
+              {item.icon}
+              <span className={`text-[10px] font-bold uppercase tracking-tight ${isActive ? 'opacity-100' : 'opacity-60'}`}>
                 {item.label}
               </span>
             </button>
@@ -55,4 +55,5 @@ export default function BottomNav({ activeRoute }: BottomNavProps) {
     </nav>
   )
 }
+
 

@@ -79,30 +79,28 @@ export default function CheckInPage() {
       <main className="max-w-lg mx-auto px-4 py-6 space-y-8">
         
         {/* Today's Counter */}
-        <div className="relative group">
-          <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity"></div>
-          <div className="glass rounded-[40px] p-10 shadow-2xl shadow-primary/10 text-center relative z-10 border-white/60">
-            <h2 className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-3">Total Kicks Today</h2>
-            <div className="flex items-center justify-center gap-2">
-              <p className="text-7xl font-black text-primary tracking-tighter">{todayCount}</p>
-            </div>
-            <p className="text-xs font-bold text-text-muted/60 mt-2 italic">Updated just now</p>
+        <div className="pristine-card p-10 text-center">
+          <h2 className="text-[11px] font-extrabold text-text-muted uppercase tracking-[0.2em] mb-4">Total Kicks Today</h2>
+          <p className="text-7xl font-black text-primary tracking-tighter">{todayCount}</p>
+          <div className="mt-6 inline-flex items-center gap-2 px-3 py-1 bg-primary/5 rounded-full">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+            <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Live Tracker</span>
           </div>
         </div>
 
         {/* Kick Button (Wife Only) */}
         {userRole === 'wife' && (
-          <div className="flex justify-center relative">
-            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse"></div>
+          <div className="flex justify-center">
             <button
               onClick={handleKick}
               disabled={saving}
-              className="relative group w-60 h-60 rounded-full glass shadow-[0_20px_50px_-10px_rgba(217,119,86,0.3)] flex items-center justify-center transition-all tap-effect disabled:opacity-50 border-white/80"
+              className="group relative w-64 h-64 flex items-center justify-center tap-effect"
             >
-              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-primary-light to-primary shadow-inner opacity-90 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative flex flex-col items-center">
-                <div className="text-6xl mb-1 drop-shadow-xl transform group-hover:scale-110 transition-transform">👶</div>
-                <span className="text-white font-black tracking-[0.1em] text-xl drop-shadow-md">
+              <div className="absolute inset-0 rounded-full bg-primary/5 group-active:scale-95 transition-transform"></div>
+              <div className="absolute inset-4 rounded-full border-2 border-dashed border-primary/20 animate-[spin_20s_linear_infinite]"></div>
+              <div className="w-48 h-48 rounded-full bg-primary shadow-[0_20px_40px_-10px_rgba(217,119,86,0.5)] flex flex-col items-center justify-center transition-all group-active:scale-90">
+                <div className="text-5xl mb-2 drop-shadow-md transform group-hover:scale-110 transition-transform">👶</div>
+                <span className="text-white font-black tracking-[0.15em] text-lg">
                   {saving ? 'RECORDING' : 'KICK!'}
                 </span>
               </div>
@@ -113,50 +111,60 @@ export default function CheckInPage() {
         {/* Trends Container */}
         <div className="grid grid-cols-1 gap-6">
           {/* Hourly Trend */}
-          <div className="glass rounded-[32px] p-6 shadow-xl shadow-black/5 border-white/60">
-            <h3 className="font-black text-text-dark text-sm uppercase tracking-wider mb-6">Hourly Activity</h3>
+          <div className="pristine-card p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-extrabold text-text-dark text-xs uppercase tracking-widest">Hourly Activity</h3>
+              <span className="text-[10px] font-bold text-text-muted">Last 24 Hours</span>
+            </div>
+            
             {loading ? (
               <div className="h-32 flex items-center justify-center">
-                <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                <div className="w-6 h-6 border-2 border-gray-100 border-t-primary rounded-full animate-spin"></div>
               </div>
             ) : (
-              <div className="flex items-end h-32 gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
+              <div className="flex items-end h-32 gap-1 overflow-x-auto pb-2 scrollbar-hide">
                 {hourlyData.map((h, i) => {
-                  const height = `${(h.count / maxHourly) * 100}%`
+                  const height = `${Math.max((h.count / maxHourly) * 100, 5)}%`
                   return (
-                    <div key={i} className="flex-1 flex flex-col justify-end items-center min-w-[20px] group relative">
-                      <div className="w-full bg-primary/20 rounded-full transition-all group-hover:bg-primary/50" 
-                           style={{ height: h.count > 0 ? height : '4px' }}>
-                      </div>
+                    <div key={i} className="flex-1 flex flex-col justify-end items-center min-w-[12px] group relative">
+                      <div 
+                        className={`w-full rounded-full transition-all ${h.count > 0 ? 'bg-primary shadow-[0_2px_8px_rgba(217,119,86,0.3)]' : 'bg-gray-100'}`} 
+                        style={{ height: h.count > 0 ? height : '4px' }}
+                      />
                     </div>
                   )
                 })}
               </div>
             )}
-            <div className="flex justify-between mt-3 text-[10px] font-black text-text-muted/60 uppercase tracking-tighter">
+            <div className="flex justify-between mt-3 text-[10px] font-bold text-text-muted uppercase tracking-tighter opacity-60">
               <span>24h Ago</span>
               <span>Now</span>
             </div>
           </div>
 
           {/* Daily Trend */}
-          <div className="glass rounded-[32px] p-6 shadow-xl shadow-black/5 border-white/60">
-            <h3 className="font-black text-text-dark text-sm uppercase tracking-wider mb-6">Weekly Progress</h3>
+          <div className="pristine-card p-6">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="font-extrabold text-text-dark text-xs uppercase tracking-widest">Weekly Progress</h3>
+              <span className="text-[10px] font-bold text-text-muted">Last 7 Days</span>
+            </div>
+
             {loading ? (
               <div className="h-40 flex items-center justify-center">
-                <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                <div className="w-6 h-6 border-2 border-gray-100 border-t-primary rounded-full animate-spin"></div>
               </div>
             ) : (
-              <div className="flex items-end h-40 gap-3 mt-4 px-2">
+              <div className="flex items-end h-40 gap-3 px-2">
                 {dailyData.map((d, i) => {
-                  const height = `${(d.count / maxDaily) * 100}%`
+                  const height = `${Math.max((d.count / maxDaily) * 100, 8)}%`
                   const isToday = i === dailyData.length - 1
                   return (
                     <div key={i} className="flex-1 flex flex-col justify-end items-center group relative">
-                      <div className={`w-full rounded-full transition-all ${isToday ? 'bg-primary shadow-lg shadow-primary/30' : 'bg-primary/20'}`} 
-                           style={{ height: d.count > 0 ? height : '8px' }}>
-                      </div>
-                      <span className={`text-[10px] mt-4 font-black uppercase tracking-tighter ${isToday ? 'text-primary' : 'text-text-muted/60'}`}>
+                      <div 
+                        className={`w-full rounded-full transition-all ${isToday ? 'bg-primary shadow-[0_4px_12px_rgba(217,119,86,0.4)]' : (d.count > 0 ? 'bg-primary/30' : 'bg-gray-100')}`} 
+                        style={{ height: d.count > 0 ? height : '8px' }}
+                      />
+                      <span className={`text-[10px] mt-4 font-extrabold uppercase tracking-tighter ${isToday ? 'text-primary' : 'text-text-muted opacity-60'}`}>
                         {d.label}
                       </span>
                     </div>
@@ -166,10 +174,10 @@ export default function CheckInPage() {
             )}
           </div>
         </div>
-
       </main>
       <BottomNav activeRoute="/check-in" />
     </div>
   )
 }
+
 
