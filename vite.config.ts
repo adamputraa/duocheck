@@ -11,18 +11,22 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'DuoCare — Pregnancy Companion',
+        name: 'DuoCare - Pregnancy Companion',
         short_name: 'DuoCare',
         description: 'A private pregnancy companion app for husband and wife.',
         theme_color: '#D97756',
+        background_color: '#FAF9F7',
+        display: 'standalone',
+        start_url: '/',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'icon-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'icon-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'

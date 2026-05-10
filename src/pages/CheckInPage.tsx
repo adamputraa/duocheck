@@ -11,7 +11,6 @@ interface TrendPoint {
   key: string
   count: number
   label: string
-  subLabel?: string
 }
 
 const dayKey = (date: Date) => format(date, 'yyyy-MM-dd')
@@ -34,7 +33,7 @@ export default function CheckInPage() {
     const today = startOfDay(new Date())
     const days: TrendPoint[] = Array.from({ length: 7 }, (_, i) => {
       const d = subDays(today, 6 - i)
-      return { date: d, key: dayKey(d), count: 0, label: format(d, 'EEE'), subLabel: format(d, 'd MMM') }
+      return { date: d, key: dayKey(d), count: 0, label: format(d, 'EEE') }
     })
 
     kicks.forEach(kick => {
@@ -119,7 +118,7 @@ export default function CheckInPage() {
           <div className="pristine-card p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-extrabold text-text-dark text-xs uppercase tracking-widest">Hourly Activity</h3>
-              <span className="text-[10px] font-bold text-text-muted">Kick Qty · Last 24 Hours</span>
+              <span className="text-[10px] font-bold text-text-muted">Kick Count · Last 24 Hours</span>
             </div>
             
             {loading ? (
@@ -130,7 +129,7 @@ export default function CheckInPage() {
               <div className="grid grid-cols-[42px_1fr] gap-3">
                 <div className="h-32 flex flex-col justify-between text-[10px] font-bold text-text-muted">
                   <span>{maxHourly}</span>
-                  <span className="-rotate-90 whitespace-nowrap self-center uppercase tracking-tighter">Kick Qty</span>
+                  <span className="-rotate-90 whitespace-nowrap self-center uppercase tracking-tighter">Kick Count</span>
                   <span>0</span>
                 </div>
                 <div className="flex items-end h-32 gap-1 overflow-x-auto pb-2 scrollbar-hide">
@@ -159,7 +158,7 @@ export default function CheckInPage() {
           <div className="pristine-card p-6">
             <div className="flex items-center justify-between mb-8">
               <h3 className="font-extrabold text-text-dark text-xs uppercase tracking-widest">Weekly Progress</h3>
-              <span className="text-[10px] font-bold text-text-muted">Kick Qty · Last 7 Days</span>
+              <span className="text-[10px] font-bold text-text-muted">Kick Count · Last 7 Days</span>
             </div>
 
             {loading ? (
@@ -170,7 +169,7 @@ export default function CheckInPage() {
               <div className="grid grid-cols-[42px_1fr] gap-3">
                 <div className="h-40 flex flex-col justify-between text-[10px] font-bold text-text-muted">
                   <span>{maxDaily}</span>
-                  <span className="-rotate-90 whitespace-nowrap self-center uppercase tracking-tighter">Kick Qty</span>
+                  <span className="-rotate-90 whitespace-nowrap self-center uppercase tracking-tighter">Kick Count</span>
                   <span>0</span>
                 </div>
                 <div>
@@ -185,7 +184,7 @@ export default function CheckInPage() {
                           </span>
                           <div className="h-full flex items-end">
                             <div
-                              title={`${d.label} ${d.subLabel}: ${d.count} kick${d.count === 1 ? '' : 's'}`}
+                              title={`${d.label}: ${d.count} kick${d.count === 1 ? '' : 's'}`}
                               className={`w-full rounded-full transition-all ${isToday ? 'bg-primary shadow-[0_4px_12px_rgba(217,119,86,0.4)]' : (d.count > 0 ? 'bg-primary/30' : 'bg-gray-100')}`}
                               style={{ height: d.count > 0 ? height : '8px' }}
                             />
@@ -200,8 +199,6 @@ export default function CheckInPage() {
                       return (
                         <span key={d.key} className={`text-center text-[10px] font-extrabold uppercase tracking-tighter leading-tight ${isToday ? 'text-primary' : 'text-text-muted opacity-60'}`}>
                           {d.label}
-                          <br />
-                          <span className="text-[9px] normal-case">{d.subLabel}</span>
                         </span>
                       )
                     })}

@@ -4,7 +4,7 @@
  * Creates profile and privacy_settings on first sign-up.
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { createContext, createElement, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
@@ -26,7 +26,9 @@ function generateShortcutToken(): string {
   return crypto.randomUUID().replace(/-/g, '')
 }
 
-export function useAuth(): UseAuthReturn {
+const AuthContext = createContext<UseAuthReturn | null>(null)
+
+function useAuthState(): UseAuthReturn {
   const [state, setState] = useState<AuthState>({
     user: null,
     loading: true,
@@ -149,4 +151,15 @@ export function useAuth(): UseAuthReturn {
     error: state.error,
     signIn, signUp, verifyOtp, signOut, clearError,
   }
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const value = useAuthState()
+  return createElement(AuthContext.Provider, { value }, children)
+}
+
+export function useAuth(): UseAuthReturn {
+  const context = useContext(AuthContext)
+  if (!context) throw new Error('useAuth must be used within AuthProvider')
+  return context
 }

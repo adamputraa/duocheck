@@ -4,7 +4,7 @@
  * fetching couple/partner data, and pregnancy profile status.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { createContext, createElement, useState, useEffect, useCallback, useContext, useRef, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -113,7 +113,9 @@ async function fetchCoupleData(userId: string): Promise<{
   }
 }
 
-export function useCouple(): UseCoupleReturn {
+const CoupleContext = createContext<UseCoupleReturn | null>(null)
+
+function useCoupleState(): UseCoupleReturn {
   const { user } = useAuth()
   const [couple, setCouple] = useState<Couple | null>(null)
   const [partner, setPartner] = useState<Partner | null>(null)
@@ -292,4 +294,15 @@ export function useCouple(): UseCoupleReturn {
     loading, error, createGroup, joinWithCode, regenerateInviteCode,
     isInCouple, refreshCouple,
   }
+}
+
+export function CoupleProvider({ children }: { children: ReactNode }) {
+  const value = useCoupleState()
+  return createElement(CoupleContext.Provider, { value }, children)
+}
+
+export function useCouple(): UseCoupleReturn {
+  const context = useContext(CoupleContext)
+  if (!context) throw new Error('useCouple must be used within CoupleProvider')
+  return context
 }
