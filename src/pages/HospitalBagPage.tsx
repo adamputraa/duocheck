@@ -27,9 +27,9 @@ export default function HospitalBagPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-cream pb-24">
+    <div className="app-page">
       <AppHeader subtitle="Hospital Bag" onSettingsClick={() => navigate('/settings')} />
-      <main className="max-w-lg mx-auto px-4 py-4 space-y-4">
+      <main className="app-main space-y-4">
         {/* Progress */}
         <div className="bg-card rounded-2xl border border-border-light p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
@@ -110,7 +110,7 @@ export default function HospitalBagPage() {
         </div>
       )}
 
-      <BottomNav activeRoute="/tasks" />
+        <BottomNav activeRoute="/hospital-bag" />
     </div>
   )
 }

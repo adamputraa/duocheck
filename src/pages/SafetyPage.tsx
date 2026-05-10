@@ -1,8 +1,3 @@
-/**
- * Safety page for DuoCare.
- * "When to Get Help" — urgent warning signs, emergency contacts, disclaimer.
- */
-
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useEmergency } from '@/hooks/useEmergency'
@@ -12,7 +7,15 @@ import { URGENT_WARNING_SIGNS } from '@/lib/pregnancy'
 import AppHeader from '@/components/AppHeader'
 import BottomNav from '@/components/BottomNav'
 import EmergencyHelpModal from '@/components/EmergencyHelpModal'
-import { Phone, AlertTriangle, Plus, X, Loader2, Trash2 } from 'lucide-react'
+import { AlertTriangle, Loader2, Phone, Plus, Trash2, X } from 'lucide-react'
+
+const CONTACT_TYPES = [
+  { value: 'doctor', label: 'Doctor' },
+  { value: 'clinic', label: 'Clinic' },
+  { value: 'hospital', label: 'Hospital' },
+  { value: 'family', label: 'Family' },
+  { value: 'other', label: 'Other' },
+]
 
 export default function SafetyPage() {
   const navigate = useNavigate()
@@ -37,110 +40,103 @@ export default function SafetyPage() {
   const handleAddContact = async () => {
     if (!contactName || !contactPhone) return
     setAddingContact(true)
-    await addContact({ name: contactName, phone: contactPhone, contact_type: contactType } as any)
-    setAddingContact(false); setContactName(''); setContactPhone('')
-    setContactType('other'); setShowAddContact(false)
+    await addContact({ name: contactName, phone: contactPhone, contact_type: contactType })
+    setAddingContact(false)
+    setContactName('')
+    setContactPhone('')
+    setContactType('other')
+    setShowAddContact(false)
   }
 
   return (
-    <div className="min-h-dvh bg-cream pb-24">
+    <div className="app-page">
       <AppHeader subtitle="Safety" onSettingsClick={() => navigate('/settings')} />
-      <main className="max-w-lg mx-auto px-4 py-4 space-y-4">
-        {/* Disclaimer */}
-        <div className="bg-warning/10 border border-warning/30 rounded-xl p-4">
-          <p className="text-sm text-amber-800 leading-relaxed">
-            <strong>Important:</strong> DuoCare cannot diagnose or replace medical advice. If symptoms feel serious, unusual, or worrying, contact your doctor, maternity ward, hospital, or emergency services immediately.
+      <main className="app-main space-y-5">
+        <section className="rounded-[24px] bg-emergency text-white p-5 shadow-[0_14px_30px_-22px_rgba(239,68,68,0.95)]">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-xl font-black tracking-tight">Emergency Help</h2>
+              <p className="text-sm text-white/85 mt-1">Send an urgent alert to your partner and use your saved contacts.</p>
+            </div>
+          </div>
+          <button onClick={() => setShowEmergencyModal(true)}
+            className="mt-5 w-full min-h-12 rounded-2xl bg-white text-emergency font-black">
+            Start Emergency Alert
+          </button>
+        </section>
+
+        <section className="app-card p-5">
+          <p className="app-section-title">Medical Attention</p>
+          <h2 className="text-lg font-black text-text-dark mt-1">When to get help</h2>
+          <p className="text-sm text-text-muted mt-2 leading-relaxed">
+            DuoCare does not diagnose. If symptoms feel serious, unusual, or worrying, contact your doctor, maternity ward, hospital, or emergency services immediately.
           </p>
-        </div>
-
-        {/* Emergency Help Button */}
-        <button onClick={() => setShowEmergencyModal(true)}
-          className="w-full flex items-center justify-center gap-2 h-14 bg-emergency text-white font-bold rounded-xl shadow-lg shadow-red-200 active:bg-red-600 transition min-h-[44px]">
-          <AlertTriangle className="w-5 h-5" /> Emergency Help
-        </button>
-
-        {/* When to Get Help */}
-        <div className="bg-card rounded-2xl border border-border-light p-5 shadow-sm">
-          <h2 className="text-base font-bold text-text-dark mb-3">When to Get Help</h2>
-          <p className="text-xs text-text-muted mb-3">Contact your doctor or go to the hospital if you experience:</p>
-          <ul className="space-y-2">
-            {URGENT_WARNING_SIGNS.map((sign, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <span className="text-emergency mt-0.5 shrink-0">⚠️</span>
-                <span className="text-sm text-text-dark">{sign}</span>
-              </li>
+          <div className="mt-4 grid gap-2">
+            {URGENT_WARNING_SIGNS.map((sign) => (
+              <div key={sign} className="flex items-start gap-3 rounded-2xl bg-red-50/70 px-3 py-3">
+                <AlertTriangle className="w-4 h-4 text-emergency mt-0.5 shrink-0" />
+                <span className="text-sm font-semibold text-text-dark">{sign}</span>
+              </div>
             ))}
-          </ul>
-        </div>
+          </div>
+        </section>
 
-        {/* Quick Contacts */}
-        <div className="bg-card rounded-2xl border border-border-light p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-text-dark">Quick Contacts</h2>
-            <button onClick={() => setShowAddContact(true)} className="text-xs text-primary font-medium min-h-[44px] flex items-center gap-1">
-              <Plus className="w-4 h-4" /> Add
+        <section className="app-card p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="app-section-title">Call List</p>
+              <h2 className="text-lg font-black text-text-dark mt-1">Quick contacts</h2>
+            </div>
+            <button onClick={() => setShowAddContact(true)} className="btn-secondary px-4 flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Add
             </button>
           </div>
 
-          <div className="space-y-2">
-            {/* Partner */}
+          <div className="mt-4 space-y-2">
             {partner && (
-              <a href={`tel:${partner.phone || ''}`}
-                className="flex items-center gap-3 bg-cream rounded-xl px-4 py-3 active:bg-primary-light/50 transition min-h-[44px]">
-                <div className="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center shrink-0">
-                  <Phone className="w-4 h-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-text-dark">{partner.display_name || 'Husband'}</p>
+              <a href={`tel:${partner.phone || ''}`} className="flex items-center gap-3 rounded-2xl bg-cream px-4 py-3">
+                <ContactIcon tone="primary" />
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-text-dark truncate">{partner.display_name || 'Partner'}</p>
                   <p className="text-xs text-text-muted">{partner.phone || 'No phone set'}</p>
                 </div>
               </a>
             )}
 
-            {/* Doctor from pregnancy profile */}
             {profile?.doctor_name && (
-              <a href={profile.doctor_phone ? `tel:${profile.doctor_phone}` : '#'}
-                className="flex items-center gap-3 bg-cream rounded-xl px-4 py-3 active:bg-primary-light/50 transition min-h-[44px]">
-                <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                  <Phone className="w-4 h-4 text-success" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-text-dark">{profile.doctor_name}</p>
+              <a href={profile.doctor_phone ? `tel:${profile.doctor_phone}` : '#'} className="flex items-center gap-3 rounded-2xl bg-cream px-4 py-3">
+                <ContactIcon tone="success" />
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-text-dark truncate">{profile.doctor_name}</p>
                   <p className="text-xs text-text-muted">{profile.doctor_phone || 'No phone set'}</p>
                 </div>
               </a>
             )}
 
-            {/* Emergency contacts */}
-            {contacts.map(c => (
-              <div key={c.id} className="flex items-center gap-3 bg-cream rounded-xl px-4 py-3">
-                <a href={`tel:${c.phone}`}
-                  className="flex items-center gap-3 flex-1 min-w-0 active:bg-primary-light/50 transition min-h-[44px]">
-                  <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
-                    <Phone className="w-4 h-4 text-warning" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-text-dark">{c.name}</p>
-                    <p className="text-xs text-text-muted">{c.phone}</p>
+            {contacts.map(contact => (
+              <div key={contact.id} className="flex items-center gap-3 rounded-2xl bg-cream px-4 py-3">
+                <a href={`tel:${contact.phone}`} className="flex items-center gap-3 flex-1 min-w-0">
+                  <ContactIcon tone="warning" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-text-dark truncate">{contact.name}</p>
+                    <p className="text-xs text-text-muted">{contact.phone}</p>
                   </div>
                 </a>
-                <button onClick={() => deleteContact(c.id)} className="w-8 h-8 flex items-center justify-center shrink-0">
-                  <Trash2 className="w-3.5 h-3.5 text-text-muted" />
+                <button onClick={() => deleteContact(contact.id)} className="w-9 h-9 rounded-xl bg-white flex items-center justify-center" aria-label="Delete contact">
+                  <Trash2 className="w-4 h-4 text-text-muted" />
                 </button>
               </div>
             ))}
 
             {contacts.length === 0 && !partner && !profile?.doctor_name && (
-              <p className="text-sm text-text-muted text-center py-2">No contacts added yet.</p>
+              <p className="text-sm text-text-muted py-4">No contacts added yet.</p>
             )}
           </div>
-        </div>
-
-        {/* Hospital Bag shortcut */}
-        <button onClick={() => navigate('/hospital-bag')}
-          className="w-full flex items-center justify-center gap-2 h-12 border border-border-light bg-card text-text-dark font-semibold rounded-xl min-h-[44px]">
-          🎒 Hospital Bag Checklist
-        </button>
+        </section>
       </main>
 
       {showEmergencyModal && (
@@ -153,29 +149,24 @@ export default function SafetyPage() {
       )}
 
       {showAddContact && (
-        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50">
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-sm p-5">
+        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/45">
+          <div className="bg-white rounded-t-[28px] sm:rounded-[28px] w-full max-w-md p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-text-dark">Add Contact</h3>
-              <button onClick={() => setShowAddContact(false)} className="w-10 h-10 flex items-center justify-center"><X className="w-5 h-5 text-text-muted" /></button>
+              <h3 className="text-xl font-black text-text-dark">Add contact</h3>
+              <button onClick={() => setShowAddContact(false)} className="w-10 h-10 rounded-2xl bg-cream flex items-center justify-center">
+                <X className="w-5 h-5 text-text-muted" />
+              </button>
             </div>
             <div className="space-y-3">
-              <input type="text" placeholder="Name *" value={contactName} onChange={e => setContactName(e.target.value)}
-                className="w-full h-12 px-3 bg-cream border border-border-light rounded-xl text-text-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              <input type="tel" placeholder="Phone *" value={contactPhone} onChange={e => setContactPhone(e.target.value)}
-                className="w-full h-12 px-3 bg-cream border border-border-light rounded-xl text-text-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              <select value={contactType} onChange={e => setContactType(e.target.value)}
-                className="w-full h-12 px-3 bg-cream border border-border-light rounded-xl text-text-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                <option value="doctor">Doctor</option>
-                <option value="clinic">Clinic</option>
-                <option value="hospital">Hospital</option>
-                <option value="family">Family</option>
-                <option value="other">Other</option>
+              <input type="text" placeholder="Name" value={contactName} onChange={event => setContactName(event.target.value)} className="app-input" />
+              <input type="tel" placeholder="Phone" value={contactPhone} onChange={event => setContactPhone(event.target.value)} className="app-input" />
+              <select value={contactType} onChange={event => setContactType(event.target.value)} className="app-input">
+                {CONTACT_TYPES.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}
               </select>
               <button onClick={handleAddContact} disabled={addingContact || !contactName || !contactPhone}
-                className="w-full h-12 bg-primary text-white font-semibold rounded-xl disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px]">
+                className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
                 {addingContact ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {addingContact ? 'Adding…' : 'Add Contact'}
+                {addingContact ? 'Adding...' : 'Add contact'}
               </button>
             </div>
           </div>
@@ -183,6 +174,20 @@ export default function SafetyPage() {
       )}
 
       <BottomNav activeRoute="/safety" />
+    </div>
+  )
+}
+
+function ContactIcon({ tone }: { tone: 'primary' | 'success' | 'warning' }) {
+  const colors = {
+    primary: 'bg-primary-light text-primary',
+    success: 'bg-success/10 text-success',
+    warning: 'bg-warning/10 text-warning',
+  }
+
+  return (
+    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${colors[tone]}`}>
+      <Phone className="w-5 h-5" />
     </div>
   )
 }
