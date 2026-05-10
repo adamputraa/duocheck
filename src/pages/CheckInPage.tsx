@@ -43,11 +43,11 @@ export default function CheckInPage() {
     return days
   }, [kicks])
 
-  // Calculate Hourly Trend (Last 24 Hours)
+  // Calculate Hourly Trend (Last 12 Hours)
   const hourlyData = useMemo(() => {
     const now = startOfHour(new Date())
-    const hours: TrendPoint[] = Array.from({ length: 24 }, (_, i) => {
-      const h = subHours(now, 23 - i)
+    const hours: TrendPoint[] = Array.from({ length: 12 }, (_, i) => {
+      const h = subHours(now, 11 - i)
       return { date: h, key: hourKey(h), count: 0, label: format(h, 'HH:mm') }
     })
 
@@ -118,7 +118,7 @@ export default function CheckInPage() {
           <div className="pristine-card p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-extrabold text-text-dark text-xs uppercase tracking-widest">Hourly Activity</h3>
-              <span className="text-[10px] font-bold text-text-muted">Kick Count · Last 24 Hours</span>
+              <span className="text-[10px] font-bold text-text-muted">Kick Count - Last 12 Hours</span>
             </div>
             
             {loading ? (
@@ -149,7 +149,7 @@ export default function CheckInPage() {
               </div>
             )}
             <div className="ml-[54px] flex justify-between mt-3 text-[10px] font-bold text-text-muted uppercase tracking-tighter opacity-60">
-              <span>24h Ago</span>
+              <span>12h Ago</span>
               <span>Now</span>
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function CheckInPage() {
           <div className="pristine-card p-6">
             <div className="flex items-center justify-between mb-8">
               <h3 className="font-extrabold text-text-dark text-xs uppercase tracking-widest">Weekly Progress</h3>
-              <span className="text-[10px] font-bold text-text-muted">Kick Count · Last 7 Days</span>
+              <span className="text-[10px] font-bold text-text-muted">Kick Count - Last 7 Days</span>
             </div>
 
             {loading ? (
