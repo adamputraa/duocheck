@@ -6,6 +6,17 @@ import AppHeader from '@/components/AppHeader'
 import BottomNav from '@/components/BottomNav'
 import { format, subDays, subHours, startOfHour, startOfDay } from 'date-fns'
 
+interface TrendPoint {
+  date: Date
+  key: string
+  count: number
+  label: string
+  subLabel?: string
+}
+
+const dayKey = (date: Date) => format(date, 'yyyy-MM-dd')
+const hourKey = (date: Date) => format(startOfHour(date), 'yyyy-MM-dd-HH')
+
 export default function CheckInPage() {
   const { userRole, isInCouple } = useCouple()
   const { kicks, loading, addKick } = useKicks()
@@ -21,14 +32,13 @@ export default function CheckInPage() {
   // Calculate Daily Trend (Last 7 Days)
   const dailyData = useMemo(() => {
     const today = startOfDay(new Date())
-    const days = Array.from({ length: 7 }, (_, i) => {
+    const days: TrendPoint[] = Array.from({ length: 7 }, (_, i) => {
       const d = subDays(today, 6 - i)
-      return { date: d, count: 0, label: format(d, 'EEE') }
+      return { date: d, key: dayKey(d), count: 0, label: format(d, 'EEE'), subLabel: format(d, 'd MMM') }
     })
 
     kicks.forEach(kick => {
-      const kickDay = startOfDay(new Date(kick.created_at))
-      const dayMatch = days.find(d => kickDay.getTime() === d.date.getTime())
+      const dayMatch = days.find(d => dayKey(new Date(kick.created_at)) === d.key)
       if (dayMatch) dayMatch.count++
     })
     return days
@@ -37,14 +47,13 @@ export default function CheckInPage() {
   // Calculate Hourly Trend (Last 24 Hours)
   const hourlyData = useMemo(() => {
     const now = startOfHour(new Date())
-    const hours = Array.from({ length: 24 }, (_, i) => {
+    const hours: TrendPoint[] = Array.from({ length: 24 }, (_, i) => {
       const h = subHours(now, 23 - i)
-      return { date: h, count: 0, label: format(h, 'HH:mm') }
+      return { date: h, key: hourKey(h), count: 0, label: format(h, 'HH:mm') }
     })
 
     kicks.forEach(kick => {
-      const kickHour = startOfHour(new Date(kick.created_at))
-      const hourMatch = hours.find(h => kickHour.getTime() === h.date.getTime())
+      const hourMatch = hours.find(h => hourKey(new Date(kick.created_at)) === h.key)
       if (hourMatch) hourMatch.count++
     })
     return hours
@@ -110,7 +119,7 @@ export default function CheckInPage() {
           <div className="pristine-card p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-extrabold text-text-dark text-xs uppercase tracking-widest">Hourly Activity</h3>
-              <span className="text-[10px] font-bold text-text-muted">Last 24 Hours</span>
+              <span className="text-[10px] font-bold text-text-muted">Kick Qty · Last 24 Hours</span>
             </div>
             
             {loading ? (
@@ -118,21 +127,29 @@ export default function CheckInPage() {
                 <div className="w-6 h-6 border-2 border-gray-100 border-t-primary rounded-full animate-spin"></div>
               </div>
             ) : (
-              <div className="flex items-end h-32 gap-1 overflow-x-auto pb-2 scrollbar-hide">
-                {hourlyData.map((h, i) => {
-                  const height = `${Math.max((h.count / maxHourly) * 100, 5)}%`
-                  return (
-                    <div key={i} className="flex-1 h-full flex flex-col justify-end items-center min-w-[12px] group relative">
-                      <div 
-                        className={`w-full rounded-full transition-all ${h.count > 0 ? 'bg-primary shadow-[0_2px_8px_rgba(217,119,86,0.3)]' : 'bg-gray-100'}`} 
-                        style={{ height: h.count > 0 ? height : '4px' }}
-                      />
-                    </div>
-                  )
-                })}
+              <div className="grid grid-cols-[42px_1fr] gap-3">
+                <div className="h-32 flex flex-col justify-between text-[10px] font-bold text-text-muted">
+                  <span>{maxHourly}</span>
+                  <span className="-rotate-90 whitespace-nowrap self-center uppercase tracking-tighter">Kick Qty</span>
+                  <span>0</span>
+                </div>
+                <div className="flex items-end h-32 gap-1 overflow-x-auto pb-2 scrollbar-hide">
+                  {hourlyData.map(h => {
+                    const height = `${Math.max((h.count / maxHourly) * 100, 5)}%`
+                    return (
+                      <div key={h.key} className="flex-1 h-full flex flex-col justify-end items-center min-w-[12px] group relative">
+                        <div
+                          title={`${h.label}: ${h.count} kick${h.count === 1 ? '' : 's'}`}
+                          className={`w-full rounded-full transition-all ${h.count > 0 ? 'bg-primary shadow-[0_2px_8px_rgba(217,119,86,0.3)]' : 'bg-gray-100'}`}
+                          style={{ height: h.count > 0 ? height : '4px' }}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
-            <div className="flex justify-between mt-3 text-[10px] font-bold text-text-muted uppercase tracking-tighter opacity-60">
+            <div className="ml-[54px] flex justify-between mt-3 text-[10px] font-bold text-text-muted uppercase tracking-tighter opacity-60">
               <span>24h Ago</span>
               <span>Now</span>
             </div>
@@ -142,7 +159,7 @@ export default function CheckInPage() {
           <div className="pristine-card p-6">
             <div className="flex items-center justify-between mb-8">
               <h3 className="font-extrabold text-text-dark text-xs uppercase tracking-widest">Weekly Progress</h3>
-              <span className="text-[10px] font-bold text-text-muted">Last 7 Days</span>
+              <span className="text-[10px] font-bold text-text-muted">Kick Qty · Last 7 Days</span>
             </div>
 
             {loading ? (
@@ -150,30 +167,45 @@ export default function CheckInPage() {
                 <div className="w-6 h-6 border-2 border-gray-100 border-t-primary rounded-full animate-spin"></div>
               </div>
             ) : (
-              <div>
-                <div className="flex items-end h-32 gap-3 px-2">
-                  {dailyData.map((d, i) => {
-                    const height = `${Math.max((d.count / maxDaily) * 100, 8)}%`
-                    const isToday = i === dailyData.length - 1
-                    return (
-                      <div key={i} className="flex-1 h-full flex flex-col justify-end items-center group relative">
-                        <div
-                          className={`w-full rounded-full transition-all ${isToday ? 'bg-primary shadow-[0_4px_12px_rgba(217,119,86,0.4)]' : (d.count > 0 ? 'bg-primary/30' : 'bg-gray-100')}`}
-                          style={{ height: d.count > 0 ? height : '8px' }}
-                        />
-                      </div>
-                    )
-                  })}
+              <div className="grid grid-cols-[42px_1fr] gap-3">
+                <div className="h-40 flex flex-col justify-between text-[10px] font-bold text-text-muted">
+                  <span>{maxDaily}</span>
+                  <span className="-rotate-90 whitespace-nowrap self-center uppercase tracking-tighter">Kick Qty</span>
+                  <span>0</span>
                 </div>
-                <div className="grid grid-cols-7 gap-3 px-2 mt-4">
-                  {dailyData.map((d, i) => {
-                    const isToday = i === dailyData.length - 1
-                    return (
-                      <span key={d.date.toISOString()} className={`text-center text-[10px] font-extrabold uppercase tracking-tighter ${isToday ? 'text-primary' : 'text-text-muted opacity-60'}`}>
-                        {d.label}
-                      </span>
-                    )
-                  })}
+                <div>
+                  <div className="flex items-end h-40 gap-3 px-2">
+                    {dailyData.map((d, i) => {
+                      const height = `${Math.max((d.count / maxDaily) * 100, 8)}%`
+                      const isToday = i === dailyData.length - 1
+                      return (
+                        <div key={d.key} className="flex-1 h-full grid grid-rows-[20px_1fr] items-end group relative">
+                          <span className={`mb-2 text-[10px] font-black ${d.count > 0 ? 'text-primary' : 'text-text-muted opacity-50'}`}>
+                            {d.count}
+                          </span>
+                          <div className="h-full flex items-end">
+                            <div
+                              title={`${d.label} ${d.subLabel}: ${d.count} kick${d.count === 1 ? '' : 's'}`}
+                              className={`w-full rounded-full transition-all ${isToday ? 'bg-primary shadow-[0_4px_12px_rgba(217,119,86,0.4)]' : (d.count > 0 ? 'bg-primary/30' : 'bg-gray-100')}`}
+                              style={{ height: d.count > 0 ? height : '8px' }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="grid grid-cols-7 gap-3 px-2 mt-4">
+                    {dailyData.map((d, i) => {
+                      const isToday = i === dailyData.length - 1
+                      return (
+                        <span key={d.key} className={`text-center text-[10px] font-extrabold uppercase tracking-tighter leading-tight ${isToday ? 'text-primary' : 'text-text-muted opacity-60'}`}>
+                          {d.label}
+                          <br />
+                          <span className="text-[9px] normal-case">{d.subLabel}</span>
+                        </span>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             )}
