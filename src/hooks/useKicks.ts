@@ -58,7 +58,11 @@ export function useKicks() {
           filter: `couple_id=eq.${couple.id}`
         },
         (payload) => {
-          setKicks(current => [payload.new as BabyKick, ...current])
+          const kick = payload.new as BabyKick
+          setKicks(current => {
+            if (current.some(existing => existing.id === kick.id)) return current
+            return [kick, ...current]
+          })
         }
       )
       .subscribe()
@@ -70,9 +74,19 @@ export function useKicks() {
 
   const addKick = async () => {
     if (!user || !couple) return false
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('baby_kicks')
       .insert({ couple_id: couple.id, user_id: user.id })
+      .select('*')
+      .single()
+
+    if (!error && data) {
+      setKicks(current => {
+        if (current.some(existing => existing.id === data.id)) return current
+        return [data, ...current]
+      })
+    }
+
     return !error
   }
 

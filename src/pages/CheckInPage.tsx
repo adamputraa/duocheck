@@ -4,7 +4,7 @@ import { useCouple } from '@/hooks/useCouple'
 import { useKicks } from '@/hooks/useKicks'
 import AppHeader from '@/components/AppHeader'
 import BottomNav from '@/components/BottomNav'
-import { format, subDays, subHours, startOfHour, startOfDay, isAfter } from 'date-fns'
+import { format, subDays, subHours, startOfHour, startOfDay } from 'date-fns'
 
 export default function CheckInPage() {
   const { userRole, isInCouple } = useCouple()
@@ -27,11 +27,9 @@ export default function CheckInPage() {
     })
 
     kicks.forEach(kick => {
-      const kickDate = new Date(kick.created_at)
-      if (isAfter(kickDate, subDays(today, 7))) {
-        const dayMatch = days.find(d => startOfDay(kickDate).getTime() === d.date.getTime())
-        if (dayMatch) dayMatch.count++
-      }
+      const kickDay = startOfDay(new Date(kick.created_at))
+      const dayMatch = days.find(d => kickDay.getTime() === d.date.getTime())
+      if (dayMatch) dayMatch.count++
     })
     return days
   }, [kicks])
@@ -45,11 +43,9 @@ export default function CheckInPage() {
     })
 
     kicks.forEach(kick => {
-      const kickDate = new Date(kick.created_at)
-      if (isAfter(kickDate, subHours(now, 24))) {
-        const hourMatch = hours.find(h => startOfHour(kickDate).getTime() === h.date.getTime())
-        if (hourMatch) hourMatch.count++
-      }
+      const kickHour = startOfHour(new Date(kick.created_at))
+      const hourMatch = hours.find(h => kickHour.getTime() === h.date.getTime())
+      if (hourMatch) hourMatch.count++
     })
     return hours
   }, [kicks])
@@ -126,7 +122,7 @@ export default function CheckInPage() {
                 {hourlyData.map((h, i) => {
                   const height = `${Math.max((h.count / maxHourly) * 100, 5)}%`
                   return (
-                    <div key={i} className="flex-1 flex flex-col justify-end items-center min-w-[12px] group relative">
+                    <div key={i} className="flex-1 h-full flex flex-col justify-end items-center min-w-[12px] group relative">
                       <div 
                         className={`w-full rounded-full transition-all ${h.count > 0 ? 'bg-primary shadow-[0_2px_8px_rgba(217,119,86,0.3)]' : 'bg-gray-100'}`} 
                         style={{ height: h.count > 0 ? height : '4px' }}
@@ -154,22 +150,31 @@ export default function CheckInPage() {
                 <div className="w-6 h-6 border-2 border-gray-100 border-t-primary rounded-full animate-spin"></div>
               </div>
             ) : (
-              <div className="flex items-end h-40 gap-3 px-2">
-                {dailyData.map((d, i) => {
-                  const height = `${Math.max((d.count / maxDaily) * 100, 8)}%`
-                  const isToday = i === dailyData.length - 1
-                  return (
-                    <div key={i} className="flex-1 flex flex-col justify-end items-center group relative">
-                      <div 
-                        className={`w-full rounded-full transition-all ${isToday ? 'bg-primary shadow-[0_4px_12px_rgba(217,119,86,0.4)]' : (d.count > 0 ? 'bg-primary/30' : 'bg-gray-100')}`} 
-                        style={{ height: d.count > 0 ? height : '8px' }}
-                      />
-                      <span className={`text-[10px] mt-4 font-extrabold uppercase tracking-tighter ${isToday ? 'text-primary' : 'text-text-muted opacity-60'}`}>
+              <div>
+                <div className="flex items-end h-32 gap-3 px-2">
+                  {dailyData.map((d, i) => {
+                    const height = `${Math.max((d.count / maxDaily) * 100, 8)}%`
+                    const isToday = i === dailyData.length - 1
+                    return (
+                      <div key={i} className="flex-1 h-full flex flex-col justify-end items-center group relative">
+                        <div
+                          className={`w-full rounded-full transition-all ${isToday ? 'bg-primary shadow-[0_4px_12px_rgba(217,119,86,0.4)]' : (d.count > 0 ? 'bg-primary/30' : 'bg-gray-100')}`}
+                          style={{ height: d.count > 0 ? height : '8px' }}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="grid grid-cols-7 gap-3 px-2 mt-4">
+                  {dailyData.map((d, i) => {
+                    const isToday = i === dailyData.length - 1
+                    return (
+                      <span key={d.date.toISOString()} className={`text-center text-[10px] font-extrabold uppercase tracking-tighter ${isToday ? 'text-primary' : 'text-text-muted opacity-60'}`}>
                         {d.label}
                       </span>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
