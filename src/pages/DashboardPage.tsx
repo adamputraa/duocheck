@@ -14,17 +14,18 @@ import EmergencyHelpModal from '@/components/EmergencyHelpModal'
 import KickSummaryChart from '@/components/KickSummaryChart'
 import LoadingCard from '@/components/LoadingCard'
 import {
+  Baby,
   Bell,
   CalendarDays,
   ChevronRight,
   Clock3,
+  Footprints,
+  HeartPulse,
   MapPin,
-  Ruler,
-  ShoppingBag,
-  Stethoscope,
   PhoneCall,
-  Activity,
-  Heart
+  ShieldCheck,
+  Stethoscope,
+  UserRound
 } from 'lucide-react'
 
 export default function DashboardPage() {
@@ -42,10 +43,15 @@ export default function DashboardPage() {
   const [emergencyError, setEmergencyError] = useState<string | null>(null)
   const [recordingKick, setRecordingKick] = useState(false)
 
+  const todayKicks = useMemo(() => {
+    const today = format(startOfDay(new Date()), 'yyyy-MM-dd')
+    return kicks.filter(kick => format(startOfDay(new Date(kick.created_at)), 'yyyy-MM-dd') === today).length
+  }, [kicks])
+
   const pregnancyProgress = pregnancyInfo ? Math.min(100, Math.max(6, (pregnancyInfo.currentWeek / 40) * 100)) : 0
   const displayName = user?.user_metadata?.display_name || (userRole === 'wife' ? 'Mama' : 'Partner')
-  const partnerName = partner?.display_name || 'Partner'
-  const dueDateLabel = profile?.due_date ? format(new Date(`${profile.due_date}T00:00:00`), 'd MMM yyyy') : '16 Aug 2026'
+  const lastKickText = kicks[0] ? format(new Date(kicks[0].created_at), 'h:mm a') : 'No kicks yet'
+  const dueDateLabel = profile?.due_date ? format(new Date(`${profile.due_date}T00:00:00`), 'd MMM yyyy') : 'Set due date'
 
   const handleEmergency = async (opts: { message?: string; includeLocation?: boolean }) => {
     setEmergencyLoading(true)
@@ -62,53 +68,57 @@ export default function DashboardPage() {
     }
 
     setRecordingKick(true)
-    await addKick()
+    const success = await addKick()
     setRecordingKick(false)
+    if (!success) navigate('/check-in')
   }
 
   if (coupleLoading || pregLoading) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center bg-[#F8FAFC]">
+      <div className="min-h-dvh flex flex-col items-center justify-center bg-[#f3f7fa]">
         <LoadingCard message="Initializing DuoCheck..." />
       </div>
     )
   }
 
   return (
-    <div className="app-page bg-[#F8FAFC]">
-      <header className="mx-auto w-full max-w-[560px] px-5 pb-4 pt-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-black tracking-tight text-primary">DuoCheck</h1>
+    <div className="app-page bg-[#f3f7fa]">
+      <header className="mx-auto w-full max-w-[560px] px-5 pb-4 pt-6">
+        <div className="flex items-start justify-between">
+          <button type="button" onClick={() => navigate('/dashboard')} className="min-h-0 text-left">
+            <h1 className="text-[42px] font-black leading-none tracking-tight text-primary">DuoCheck</h1>
+          </button>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#171B23] shadow-sm"
-              aria-label="Notifications"
+              onClick={() => navigate('/settings')}
+              className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#1f2937] shadow-[0_12px_28px_-22px_rgba(17,24,39,0.6)]"
+              aria-label="Notifications and settings"
             >
               <Bell className="h-6 w-6" />
-              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-primary ring-2 ring-white" />
+              <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-white" />
             </button>
             <button
               type="button"
               onClick={() => navigate('/settings')}
-              className="h-10 w-10 overflow-hidden rounded-full border-2 border-white shadow-md"
+              className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary bg-white text-primary shadow-[0_12px_28px_-22px_rgba(17,24,39,0.6)]"
               aria-label="Profile"
             >
-              <img src="/avatar.png" alt="Avatar" className="h-full w-full object-cover" />
+              <UserRound className="h-6 w-6" />
             </button>
           </div>
         </div>
 
-        <div className="mt-8">
-          <h2 className="text-[32px] font-bold leading-none tracking-tight text-[#171B23]">Good morning</h2>
-          <p className="mt-2 flex items-center gap-1.5 text-[19px] font-medium text-[#687281]">
-            {displayName} & {partnerName} <Heart className="h-4 w-4 fill-primary text-primary" />
+        <button type="button" onClick={() => navigate('/settings')} className="mt-6 block min-h-0 text-left">
+          <h2 className="text-[34px] font-black leading-none tracking-tight text-[#171b23]">Good morning</h2>
+          <p className="mt-2 text-[21px] font-semibold text-[#687281]">
+            {displayName}{partner?.display_name ? ` & ${partner.display_name}` : ''}
           </p>
-        </div>
+        </button>
       </header>
 
-      <main className="mx-auto w-full max-w-[560px] space-y-6 px-5 pb-32">
+      <main className="mx-auto w-full max-w-[560px] space-y-5 px-5 pb-28">
         {emergencyEvents.map(event => (
           <EmergencyBanner
             key={event.id}
@@ -119,141 +129,140 @@ export default function DashboardPage() {
         ))}
 
         {emergencyError && (
-          <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
+          <div className="rounded-[22px] border border-red-100 bg-red-50 p-4">
             <p className="text-sm font-bold text-emergency">{emergencyError}</p>
           </div>
         )}
 
-        <section className="rounded-[32px] border border-white bg-white p-6 shadow-[0_12px_32px_-16px_rgba(17,24,39,0.1)]">
-          <div className="flex justify-between gap-4">
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-[#687281]">You are</p>
-              <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-6xl font-bold tracking-tight text-primary">
-                  {pregnancyInfo?.currentWeek ?? '28'}
+        <section className="overflow-hidden rounded-[32px] border border-white bg-white shadow-[0_18px_44px_-34px_rgba(17,24,39,0.65)]">
+          <div className="grid grid-cols-[1fr_auto] gap-4 p-5">
+            <div>
+              <p className="text-[15px] font-semibold text-[#687281]">You are</p>
+              <div className="mt-2 flex items-end gap-2">
+                <span className="text-[68px] font-black leading-[0.85] tracking-tight text-primary sm:text-[76px]">
+                  {pregnancyInfo?.currentWeek ?? '-'}
                 </span>
-                <div className="flex flex-col">
-                  <span className="text-2xl font-bold text-primary">weeks</span>
-                  <span className="text-sm font-medium text-[#687281]">
-                    {pregnancyInfo?.trimester ?? '2nd trimester'}
-                  </span>
+                <div className="pb-1">
+                  <p className="text-2xl font-black leading-none text-primary sm:text-[28px]">weeks</p>
+                  <p className="mt-2 text-[17px] font-semibold text-[#687281]">
+                    {pregnancyInfo?.trimester ?? 'Pregnancy setup'}
+                  </p>
                 </div>
               </div>
-              <p className="mt-4 text-[15px] font-bold text-primary">
-                {pregnancyInfo ? `${pregnancyInfo.daysUntilDue} days to go` : '84 days to go'}
+              <p className="mt-5 text-[21px] font-extrabold text-primary">
+                {pregnancyInfo ? `${pregnancyInfo.daysUntilDue} days to go` : 'Add due date'}
               </p>
             </div>
 
-            <div className="relative flex h-32 w-32 items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-[#FFF0EA] opacity-60" />
-              <div className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-white shadow-lg">
-                <img src="/baby_illustration.png" alt="Baby" className="h-full w-full object-cover" />
+            <div className="relative flex h-[118px] w-[118px] items-center justify-center rounded-full bg-[#ffe7e1] sm:h-[138px] sm:w-[138px]">
+              <div className="absolute inset-3 rounded-full bg-[#ffd6ce]" />
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-primary text-white shadow-[0_16px_30px_-18px_rgba(240,95,69,0.9)] sm:h-[94px] sm:w-[94px]">
+                <Baby className="h-12 w-12 sm:h-14 sm:w-14" />
               </div>
-              <div className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-mint text-white ring-4 ring-white">
-                <Activity className="h-4 w-4" />
+              <div className="absolute bottom-2 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-[#2dbfb6] text-white ring-4 ring-white">
+                <ShieldCheck className="h-5 w-5" />
               </div>
             </div>
           </div>
 
-          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-[#F1F5F9]">
-            <div className="h-full rounded-full bg-primary" style={{ width: `${pregnancyProgress}%` }} />
-          </div>
+          <div className="px-5 pb-5">
+            <div className="h-2 overflow-hidden rounded-full bg-[#edf0f3]">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${pregnancyProgress}%` }} />
+            </div>
 
-          <div className="mt-8 grid grid-cols-3 gap-2">
-            <MetricTile
-              icon={<CalendarDays className="h-5 w-5" />}
-              label="Due date"
-              value={dueDateLabel}
-              color="bg-[#FFF0EA] text-primary"
-            />
-            <MetricTile
-              icon={<Ruler className="h-5 w-5" />}
-              label="Baby length"
-              value="37.0 cm"
-              color="bg-[#EAF8F6] text-mint"
-            />
-            <MetricTile
-              icon={<ShoppingBag className="h-5 w-5" />}
-              label="Baby weight"
-              value="1.15 kg"
-              color="bg-[#FFF6E7] text-amber"
-            />
+            <div className="mt-5 grid grid-cols-3 divide-x divide-[#e8edf2] border-t border-[#edf0f3] pt-4">
+              <HeroMetric icon={<CalendarDays className="h-5 w-5" />} label="Due date" value={dueDateLabel} tone="coral" />
+              <HeroMetric icon={<HeartPulse className="h-5 w-5" />} label="Today" value={`${todayKicks} kicks`} tone="mint" />
+              <HeroMetric icon={<Footprints className="h-5 w-5" />} label="Last kick" value={lastKickText} tone="amber" />
+            </div>
           </div>
         </section>
 
         <KickSummaryChart
           kicks={kicks}
+          compact
+          showRecordAction
           onRecord={handleRecordKick}
           recording={recordingKick}
         />
 
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-xl font-bold text-[#171B23]">Today</h3>
-            <button onClick={() => navigate('/appointments')} className="flex items-center gap-1 text-sm font-bold text-[#687281]">
-              View all <ChevronRight className="h-4 w-4" />
+        <section className="rounded-[28px] border border-white bg-white p-5 shadow-[0_18px_44px_-36px_rgba(17,24,39,0.58)]">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-black tracking-tight text-[#171b23]">Today</h2>
+            <button
+              type="button"
+              onClick={() => navigate('/appointments')}
+              className="flex min-h-0 items-center gap-1 text-sm font-extrabold text-primary"
+            >
+              View all
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
           <button
             type="button"
             onClick={() => navigate('/appointments')}
-            className="flex w-full items-center gap-4 rounded-3xl bg-white p-4 shadow-sm border border-[#F1F5F9]"
+            className="mt-4 flex w-full items-center gap-4 rounded-[24px] bg-[#edfafa] p-4 text-left"
           >
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-mint-light text-mint">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#d7f3ef] text-[#159e93]">
               <CalendarDays className="h-8 w-8" />
             </div>
-            <div className="flex-1 text-left">
-              <p className="text-sm font-bold text-mint">Appointment</p>
-              <p className="text-lg font-bold text-[#171B23]">
-                {nextAppointment?.title || 'Antenatal Check-up'}
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-black text-[#159e93]">Appointment</p>
+              <p className="mt-1 truncate text-lg font-black text-[#171b23]">
+                {nextAppointment?.title || 'No appointment scheduled'}
               </p>
-              <div className="mt-1 flex items-center gap-4 text-sm font-medium text-[#687281]">
-                <span className="flex items-center gap-1.5">
+              <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold text-[#687281]">
+                <span className="inline-flex items-center gap-1">
                   <Clock3 className="h-4 w-4" />
-                  {nextAppointment?.appointment_time || '10:30 AM'}
+                  {nextAppointment?.appointment_time || 'Set time'}
                 </span>
-                <span className="flex items-center gap-1.5 truncate max-w-[150px]">
-                  <MapPin className="h-4 w-4" />
-                  {nextAppointment?.location || 'Klinik Kesihatan Wangsa Maju'}
+                <span className="inline-flex min-w-0 items-center gap-1">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{nextAppointment?.location || profile?.hospital_name || 'Add location'}</span>
                 </span>
-              </div>
+              </p>
             </div>
-            <ChevronRight className="h-6 w-6 text-[#A0AEC0]" />
+            <ChevronRight className="h-6 w-6 shrink-0 text-[#687281]" />
           </button>
         </section>
 
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-xl font-bold text-[#171B23]">Safety</h3>
-            <button onClick={() => navigate('/safety')} className="flex items-center gap-1 text-sm font-bold text-primary">
-              See all <ChevronRight className="h-4 w-4" />
+        <section className="rounded-[28px] border border-white bg-white p-5 shadow-[0_18px_44px_-36px_rgba(17,24,39,0.58)]">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-black tracking-tight text-[#171b23]">Safety</h2>
+            <button
+              type="button"
+              onClick={() => navigate('/safety')}
+              className="flex min-h-0 items-center gap-1 text-sm font-extrabold text-primary"
+            >
+              See all
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <SafetyTile
-              label="Emergency Contacts"
-              icon={<PhoneCall className="h-7 w-7" />}
-              color="bg-[#FFF0EA] text-[#F04438]"
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <QuickTile
+              label="Emergency"
+              icon={<ShieldCheck className="h-7 w-7" />}
+              tone="bg-[#fff0ef] text-[#e84755]"
               onClick={() => setShowEmergencyModal(true)}
             />
-            <SafetyTile
-              label="Nearby Hospitals"
+            <QuickTile
+              label="Hospitals"
               icon={<MapPin className="h-7 w-7" />}
-              color="bg-[#FFF6E7] text-[#FDB022]"
+              tone="bg-[#fff6e7] text-[#dc8500]"
               onClick={() => navigate('/safety')}
             />
-            <SafetyTile
-              label="24/7 Nurse Help"
-              icon={<Activity className="h-7 w-7" />}
-              color="bg-[#EAF8F6] text-[#2DBFB6]"
-              onClick={() => navigate('/safety')}
+            <QuickTile
+              label="Call Doctor"
+              icon={<PhoneCall className="h-7 w-7" />}
+              tone="bg-[#eaf8f6] text-[#159e93]"
+              onClick={() => profile?.doctor_phone ? window.location.href = `tel:${profile.doctor_phone}` : setShowEmergencyModal(true)}
             />
-            <SafetyTile
-              label="Symptoms Checker"
+            <QuickTile
+              label="Symptoms"
               icon={<Stethoscope className="h-7 w-7" />}
-              color="bg-[#F0F5FF] text-[#2E90FA]"
+              tone="bg-[#eef5ff] text-[#1769aa]"
               onClick={() => navigate('/safety')}
             />
           </div>
@@ -274,28 +283,33 @@ export default function DashboardPage() {
   )
 }
 
-function MetricTile({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string; color: string }) {
+function HeroMetric({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone: 'coral' | 'mint' | 'amber' }) {
+  const toneClass = {
+    coral: 'bg-[#fff0ef] text-primary',
+    mint: 'bg-[#eaf8f6] text-[#159e93]',
+    amber: 'bg-[#fff6e7] text-[#dc8500]'
+  }[tone]
+
   return (
-    <div className="flex flex-col gap-2">
-      <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${color}`}>
+    <div className="min-w-0 px-3 first:pl-0 last:pr-0">
+      <div className={`mb-2 flex h-10 w-10 items-center justify-center rounded-2xl ${toneClass}`}>
         {icon}
       </div>
-      <div>
-        <p className="text-[11px] font-bold text-[#687281]">{label}</p>
-        <p className="text-[13px] font-bold text-[#171B23]">{value}</p>
-      </div>
+      <p className="text-[13px] font-semibold leading-tight text-[#687281]">{label}</p>
+      <p className="mt-1 truncate text-[15px] font-black leading-tight text-[#171b23]">{value}</p>
     </div>
   )
 }
 
-function SafetyTile({ label, icon, color, onClick }: { label: string; icon: React.ReactNode; color: string; onClick: () => void }) {
+function QuickTile({ label, icon, tone, onClick }: { label: string; icon: React.ReactNode; tone: string; onClick: () => void }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`flex flex-col items-center gap-3 rounded-3xl p-4 text-center transition-all active:scale-95 ${color}`}
+      className={`flex min-h-[112px] flex-col items-center justify-center gap-3 rounded-[22px] px-2 text-center ${tone}`}
     >
-      <div className="mb-1">{icon}</div>
-      <span className="text-[11px] font-bold leading-tight">{label}</span>
+      {icon}
+      <span className="text-[13px] font-extrabold leading-tight">{label}</span>
     </button>
   )
 }

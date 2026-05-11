@@ -13,8 +13,6 @@ const HospitalBagPage = lazy(() => import('@/pages/HospitalBagPage'))
 const SafetyPage = lazy(() => import('@/pages/SafetyPage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const PregnancySetupPage = lazy(() => import('@/pages/PregnancySetupPage'))
-const JourneyPage = lazy(() => import('@/pages/JourneyPage'))
-const LearnPage = lazy(() => import('@/pages/LearnPage'))
 const PairingScreen = lazy(() => import('@/components/PairingScreen'))
 
 function AppLoading() {
@@ -86,12 +84,6 @@ export default function App() {
               } />
               <Route path="/safety" element={
                 <AuthGuard><CoupleGuard><PregnancyGuard><SafetyPage /></PregnancyGuard></CoupleGuard></AuthGuard>
-              } />
-              <Route path="/journey" element={
-                <AuthGuard><CoupleGuard><PregnancyGuard><JourneyPage /></PregnancyGuard></CoupleGuard></AuthGuard>
-              } />
-              <Route path="/learn" element={
-                <AuthGuard><CoupleGuard><PregnancyGuard><LearnPage /></PregnancyGuard></CoupleGuard></AuthGuard>
               } />
 
               <Route path="/settings" element={
