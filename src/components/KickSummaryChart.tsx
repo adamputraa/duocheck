@@ -82,16 +82,17 @@ export default function KickSummaryChart({
   const midValue = Math.ceil(maxValue / 2)
   const showAverageMarker = Number(average.toFixed(1)) > 0
   const showMidValue = midValue > 0 && midValue < Math.ceil(maxValue)
+  const chartHeight = compact ? 'h-20' : 'h-44'
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-white bg-white p-5 shadow-[0_18px_44px_-36px_rgba(17,24,39,0.58)]">
+    <section className={`overflow-hidden rounded-[28px] border border-white bg-white ${compact ? 'p-4' : 'p-5'} shadow-[0_18px_44px_-36px_rgba(17,24,39,0.58)]`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-primary-light text-primary">
-            <Footprints className="h-7 w-7" />
+          <span className={`${compact ? 'h-11 w-11' : 'h-12 w-12'} flex items-center justify-center rounded-[18px] bg-primary-light text-primary`}>
+            <Footprints className={`${compact ? 'h-6 w-6' : 'h-7 w-7'}`} />
           </span>
           <div>
-            <p className="text-[28px] font-black leading-none tracking-tight text-[#171b23]">Kick Count</p>
+            <p className={`${compact ? 'text-[26px]' : 'text-[28px]'} font-black leading-none tracking-tight text-[#171b23]`}>Kick Count</p>
             <p className="text-xs font-bold text-[#687281]">{subtitle}</p>
           </div>
         </div>
@@ -104,7 +105,7 @@ export default function KickSummaryChart({
               aria-label={option.label}
               aria-pressed={range === option.key}
               onClick={() => setRange(option.key)}
-              className={`h-11 min-h-0 w-12 text-sm font-black ${
+              className={`${compact ? 'h-10 w-11' : 'h-11 w-12'} min-h-0 text-sm font-black ${
                 range === option.key
                   ? 'bg-primary text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]'
                   : 'border-l border-[#dfe5eb] text-[#687281] first:border-l-0'
@@ -116,23 +117,23 @@ export default function KickSummaryChart({
         </div>
       </div>
 
-      <div className={`${compact ? 'mt-4 pb-3' : 'mt-5 pb-4'} flex items-end gap-2 border-b border-[#edf0f3]`}>
-        <span className={`${compact ? 'text-[50px]' : 'text-[62px]'} font-black leading-none tracking-tight text-primary`}>{total}</span>
-        <div className="pb-2">
+      <div className={`${compact ? 'mt-3 pb-2' : 'mt-5 pb-4'} flex items-end gap-2 border-b border-[#edf0f3]`}>
+        <span className={`${compact ? 'text-[44px]' : 'text-[62px]'} font-black leading-none tracking-tight text-primary`}>{total}</span>
+        <div className={compact ? 'pb-1' : 'pb-2'}>
           <p className="text-sm font-black text-[#687281]">kicks</p>
           <p className="text-xs font-bold text-[#687281]">Avg {average.toFixed(1)} {unitLabel}</p>
         </div>
-        <Info className="mb-3 h-4 w-4 text-[#687281]" />
+        <Info className={`${compact ? 'mb-2' : 'mb-3'} h-4 w-4 text-[#687281]`} />
       </div>
 
-      <div className={`${compact ? 'mt-3' : 'mt-4'} grid grid-cols-[34px_1fr] gap-3`}>
-        <div className={`flex ${compact ? 'h-28' : 'h-44'} flex-col justify-between pt-1 text-[12px] font-semibold text-[#687281]`}>
+      <div className={`${compact ? 'mt-2' : 'mt-4'} grid grid-cols-[34px_1fr] gap-3`}>
+        <div className={`flex ${chartHeight} flex-col justify-between pt-1 text-[12px] font-semibold text-[#687281]`}>
           <span>{Math.ceil(maxValue)}</span>
           <span>{showMidValue ? midValue : ''}</span>
           <span>0</span>
         </div>
 
-        <div className={`relative ${compact ? 'h-28' : 'h-44'} border-l border-b border-[#e3e8ef] pl-2`}>
+        <div className={`relative ${chartHeight} border-l border-b border-[#e3e8ef] pl-2`}>
           <div className="absolute inset-x-2 top-1/3 border-t border-[#eef2f6]" />
           <div className="absolute inset-x-2 top-2/3 border-t border-[#eef2f6]" />
           {showAverageMarker && (
@@ -151,7 +152,7 @@ export default function KickSummaryChart({
               const height = bucket.count > 0 ? `${Math.max((bucket.count / maxValue) * 100, 8)}%` : '4px'
               const isLatest = index === buckets.length - 1
               const shouldShowLabel =
-                range === 'W' || index === 0 || index === buckets.length - 1 || (range === 'D' ? index % (compact ? 4 : 3) === 0 : index % 7 === 0)
+                range === 'W' || index === 0 || index === buckets.length - 1 || (range === 'D' ? index % (compact ? 5 : 3) === 0 : index % 7 === 0)
               const showValue = bucket.count > 0 && (range !== 'M' || index % 5 === 0 || isLatest)
 
               return (
@@ -195,7 +196,7 @@ export default function KickSummaryChart({
           type="button"
           onClick={onRecord}
           disabled={recording || !onRecord}
-          className="mt-5 flex w-full items-center justify-center gap-3 rounded-[18px] bg-primary px-5 py-4 text-lg font-black text-white shadow-[0_18px_30px_-20px_rgba(240,95,69,0.9)] disabled:opacity-70"
+          className="mt-4 flex w-full items-center justify-center gap-3 rounded-[18px] bg-primary px-5 py-3.5 text-lg font-black text-white shadow-[0_18px_30px_-20px_rgba(240,95,69,0.9)] disabled:opacity-70"
         >
           <Footprints className="h-6 w-6" />
           {recording ? 'Recording...' : 'Record Kick'}
