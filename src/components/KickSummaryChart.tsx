@@ -80,7 +80,7 @@ export default function KickSummaryChart({
 
   const averagePosition = `${Math.min(100, (average / maxValue) * 100)}%`
   const midValue = Math.ceil(maxValue / 2)
-  const showAverageMarker = average > 0
+  const showAverageMarker = Number(average.toFixed(1)) > 0
   const showMidValue = midValue > 0 && midValue < Math.ceil(maxValue)
 
   return (
