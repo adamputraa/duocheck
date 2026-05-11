@@ -176,6 +176,7 @@ export default function DashboardPage() {
 
         <KickSummaryChart
           kicks={kicks}
+          compact
           showRecordAction
           onRecord={handleRecordKick}
           recording={recordingKick}

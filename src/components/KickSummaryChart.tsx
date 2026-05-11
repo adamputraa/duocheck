@@ -87,11 +87,11 @@ export default function KickSummaryChart({
     <section className="overflow-hidden rounded-[28px] border border-white bg-white p-5 shadow-[0_18px_44px_-36px_rgba(17,24,39,0.58)]">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-light text-primary">
-            <Footprints className="h-6 w-6" />
+          <span className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-primary-light text-primary">
+            <Footprints className="h-7 w-7" />
           </span>
           <div>
-            <p className="text-[25px] font-black tracking-tight text-[#171b23]">Kick Count</p>
+            <p className="text-[28px] font-black leading-none tracking-tight text-[#171b23]">Kick Count</p>
             <p className="text-xs font-bold text-[#687281]">{subtitle}</p>
           </div>
         </div>
@@ -116,8 +116,8 @@ export default function KickSummaryChart({
         </div>
       </div>
 
-      <div className="mt-5 flex items-end gap-2 border-b border-[#edf0f3] pb-4">
-        <span className="text-[62px] font-black leading-none tracking-tight text-primary">{total}</span>
+      <div className={`${compact ? 'mt-4 pb-3' : 'mt-5 pb-4'} flex items-end gap-2 border-b border-[#edf0f3]`}>
+        <span className={`${compact ? 'text-[50px]' : 'text-[62px]'} font-black leading-none tracking-tight text-primary`}>{total}</span>
         <div className="pb-2">
           <p className="text-sm font-black text-[#687281]">kicks</p>
           <p className="text-xs font-bold text-[#687281]">Avg {average.toFixed(1)} {unitLabel}</p>
@@ -125,14 +125,14 @@ export default function KickSummaryChart({
         <Info className="mb-3 h-4 w-4 text-[#687281]" />
       </div>
 
-      <div className="mt-4 grid grid-cols-[34px_1fr] gap-3">
-        <div className={`flex ${compact ? 'h-36' : 'h-44'} flex-col justify-between pt-1 text-[12px] font-semibold text-[#687281]`}>
+      <div className={`${compact ? 'mt-3' : 'mt-4'} grid grid-cols-[34px_1fr] gap-3`}>
+        <div className={`flex ${compact ? 'h-28' : 'h-44'} flex-col justify-between pt-1 text-[12px] font-semibold text-[#687281]`}>
           <span>{Math.ceil(maxValue)}</span>
           <span>{showMidValue ? midValue : ''}</span>
           <span>0</span>
         </div>
 
-        <div className={`relative ${compact ? 'h-36' : 'h-44'} border-l border-b border-[#e3e8ef] pl-2`}>
+        <div className={`relative ${compact ? 'h-28' : 'h-44'} border-l border-b border-[#e3e8ef] pl-2`}>
           <div className="absolute inset-x-2 top-1/3 border-t border-[#eef2f6]" />
           <div className="absolute inset-x-2 top-2/3 border-t border-[#eef2f6]" />
           {showAverageMarker && (
@@ -151,7 +151,7 @@ export default function KickSummaryChart({
               const height = bucket.count > 0 ? `${Math.max((bucket.count / maxValue) * 100, 8)}%` : '4px'
               const isLatest = index === buckets.length - 1
               const shouldShowLabel =
-                range === 'W' || index === 0 || index === buckets.length - 1 || (range === 'D' ? index % 3 === 0 : index % 7 === 0)
+                range === 'W' || index === 0 || index === buckets.length - 1 || (range === 'D' ? index % (compact ? 4 : 3) === 0 : index % 7 === 0)
               const showValue = bucket.count > 0 && (range !== 'M' || index % 5 === 0 || isLatest)
 
               return (
@@ -195,19 +195,21 @@ export default function KickSummaryChart({
           type="button"
           onClick={onRecord}
           disabled={recording || !onRecord}
-          className="mt-6 flex w-full items-center justify-center gap-3 rounded-[18px] bg-primary px-5 py-4 text-lg font-black text-white shadow-[0_18px_30px_-20px_rgba(240,95,69,0.9)] disabled:opacity-70"
+          className="mt-5 flex w-full items-center justify-center gap-3 rounded-[18px] bg-primary px-5 py-4 text-lg font-black text-white shadow-[0_18px_30px_-20px_rgba(240,95,69,0.9)] disabled:opacity-70"
         >
           <Footprints className="h-6 w-6" />
           {recording ? 'Recording...' : 'Record Kick'}
         </button>
       )}
 
-      <div className="mt-5 flex w-full items-center justify-between border-t border-[#edf0f3] pt-4 text-left">
-        <span className="flex items-center gap-3 text-sm font-semibold text-[#687281]">
-          <ShieldCheck className="h-5 w-5 text-[#29a99f]" />
-          Babies are often active after meals and in the evening.
-        </span>
-      </div>
+      {!showRecordAction && (
+        <div className="mt-5 flex w-full items-center justify-between border-t border-[#edf0f3] pt-4 text-left">
+          <span className="flex items-center gap-3 text-sm font-semibold text-[#687281]">
+            <ShieldCheck className="h-5 w-5 text-[#29a99f]" />
+            Babies are often active after meals and in the evening.
+          </span>
+        </div>
+      )}
     </section>
   )
 }
