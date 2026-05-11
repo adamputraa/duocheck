@@ -80,6 +80,8 @@ export default function KickSummaryChart({
 
   const averagePosition = `${Math.min(100, (average / maxValue) * 100)}%`
   const midValue = Math.ceil(maxValue / 2)
+  const showAverageMarker = average > 0
+  const showMidValue = midValue > 0 && midValue < Math.ceil(maxValue)
 
   return (
     <section className="overflow-hidden rounded-[28px] border border-white bg-white p-5 shadow-[0_18px_44px_-36px_rgba(17,24,39,0.58)]">
@@ -126,28 +128,30 @@ export default function KickSummaryChart({
       <div className="mt-4 grid grid-cols-[34px_1fr] gap-3">
         <div className={`flex ${compact ? 'h-36' : 'h-44'} flex-col justify-between pt-1 text-[12px] font-semibold text-[#687281]`}>
           <span>{Math.ceil(maxValue)}</span>
-          <span>{midValue}</span>
+          <span>{showMidValue ? midValue : ''}</span>
           <span>0</span>
         </div>
 
         <div className={`relative ${compact ? 'h-36' : 'h-44'} border-l border-b border-[#e3e8ef] pl-2`}>
           <div className="absolute inset-x-2 top-1/3 border-t border-[#eef2f6]" />
           <div className="absolute inset-x-2 top-2/3 border-t border-[#eef2f6]" />
-          <div
-            className="absolute left-2 right-0 z-20 border-t-2 border-dashed border-[#29b8ad]"
-            style={{ bottom: averagePosition }}
-          >
-            <span className="absolute right-0 -top-3 bg-white px-1 text-sm font-black text-[#29a99f]">
-              Avg {average.toFixed(1)}
-            </span>
-          </div>
+          {showAverageMarker && (
+            <div
+              className="absolute left-2 right-0 z-20 border-t-2 border-dashed border-[#29b8ad]"
+              style={{ bottom: averagePosition }}
+            >
+              <span className="absolute right-0 -top-3 bg-white px-1 text-sm font-black text-[#29a99f]">
+                Avg {average.toFixed(1)}
+              </span>
+            </div>
+          )}
 
           <div className="relative z-10 flex h-full items-end gap-1">
             {buckets.map((bucket, index) => {
               const height = bucket.count > 0 ? `${Math.max((bucket.count / maxValue) * 100, 8)}%` : '4px'
               const isLatest = index === buckets.length - 1
               const shouldShowLabel =
-                range === 'W' || buckets.length <= 12 || index === 0 || index === buckets.length - 1 || index % 7 === 0
+                range === 'W' || index === 0 || index === buckets.length - 1 || (range === 'D' ? index % 3 === 0 : index % 7 === 0)
               const showValue = bucket.count > 0 && (range !== 'M' || index % 5 === 0 || isLatest)
 
               return (
