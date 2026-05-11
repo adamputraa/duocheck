@@ -83,13 +83,10 @@ export default function DashboardPage() {
 
   return (
     <div className="app-page bg-[#f3f7fa]">
-      <header className="mx-auto w-full max-w-[560px] px-5 pb-3 pt-5">
-        <div className="flex items-center justify-between">
+      <header className="mx-auto w-full max-w-[560px] px-5 pb-4 pt-6">
+        <div className="flex items-start justify-between">
           <button type="button" onClick={() => navigate('/dashboard')} className="min-h-0 text-left">
-            <h1 className="text-[34px] font-black leading-none tracking-tight text-primary">DuoCheck</h1>
-            <p className="mt-2 text-[15px] font-semibold text-[#687281]">
-              Good morning, {displayName}
-            </p>
+            <h1 className="text-[42px] font-black leading-none tracking-tight text-primary">DuoCheck</h1>
           </button>
 
           <div className="flex items-center gap-3">
@@ -112,6 +109,13 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+
+        <button type="button" onClick={() => navigate('/settings')} className="mt-6 block min-h-0 text-left">
+          <h2 className="text-[34px] font-black leading-none tracking-tight text-[#171b23]">Good morning</h2>
+          <p className="mt-2 text-[21px] font-semibold text-[#687281]">
+            {displayName}{partner?.display_name ? ` & ${partner.display_name}` : ''}
+          </p>
+        </button>
       </header>
 
       <main className="mx-auto w-full max-w-[560px] space-y-5 px-5 pb-28">
@@ -135,17 +139,17 @@ export default function DashboardPage() {
             <div>
               <p className="text-[15px] font-semibold text-[#687281]">You are</p>
               <div className="mt-2 flex items-end gap-2">
-                <span className="text-[56px] font-black leading-[0.85] tracking-tight text-primary sm:text-[68px]">
+                <span className="text-[68px] font-black leading-[0.85] tracking-tight text-primary sm:text-[76px]">
                   {pregnancyInfo?.currentWeek ?? '-'}
                 </span>
                 <div className="pb-1">
-                  <p className="text-xl font-black leading-none text-primary sm:text-2xl">weeks</p>
-                  <p className="mt-2 text-[15px] font-semibold text-[#687281]">
+                  <p className="text-2xl font-black leading-none text-primary sm:text-[28px]">weeks</p>
+                  <p className="mt-2 text-[17px] font-semibold text-[#687281]">
                     {pregnancyInfo?.trimester ?? 'Pregnancy setup'}
                   </p>
                 </div>
               </div>
-              <p className="mt-5 text-lg font-extrabold text-primary">
+              <p className="mt-5 text-[21px] font-extrabold text-primary">
                 {pregnancyInfo ? `${pregnancyInfo.daysUntilDue} days to go` : 'Add due date'}
               </p>
             </div>
