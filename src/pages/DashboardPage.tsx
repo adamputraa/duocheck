@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/useAuth'
 import { useCouple } from '@/hooks/useCouple'
 import { usePregnancy } from '@/hooks/usePregnancy'
 import { useAppointments } from '@/hooks/useAppointments'
-import { useTasks } from '@/hooks/useTasks'
 import { useHospitalBag } from '@/hooks/useHospitalBag'
 import { useRealtime } from '@/hooks/useRealtime'
 import { useEmergency } from '@/hooks/useEmergency'
@@ -14,15 +13,15 @@ import AppHeader from '@/components/AppHeader'
 import BottomNav from '@/components/BottomNav'
 import EmergencyBanner from '@/components/EmergencyBanner'
 import EmergencyHelpModal from '@/components/EmergencyHelpModal'
+import KickSummaryChart from '@/components/KickSummaryChart'
 import LoadingCard from '@/components/LoadingCard'
-import { Activity, AlertTriangle, BriefcaseMedical, CalendarDays, ChevronRight, ListChecks, ShieldAlert } from 'lucide-react'
+import { Activity, AlertTriangle, BriefcaseMedical, CalendarDays, ChevronRight, ShieldAlert } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const { partner, userRole, loading: coupleLoading } = useCouple()
   const { profile, pregnancyInfo, loading: pregLoading } = usePregnancy()
   const { nextAppointment } = useAppointments()
-  const { pending } = useTasks()
   const { completionPercent, checkedItems, totalItems } = useHospitalBag()
   const { emergencyEvents } = useRealtime()
   const { triggerEmergency, resolveEmergency } = useEmergency()
@@ -81,21 +80,38 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <section className="rounded-[28px] bg-primary text-white p-5 shadow-[0_18px_36px_-26px_rgba(217,119,86,0.95)]">
-          <p className="text-xs font-extrabold text-white/75 uppercase tracking-[0.16em]">Today</p>
-          <h2 className="text-2xl font-black tracking-tight mt-1">
-            {userRole === 'wife' ? 'Your care dashboard' : `Hi, ${user?.user_metadata?.display_name || 'there'}`}
-          </h2>
+        <section className="rounded-[30px] bg-white border border-border-light p-5 shadow-[0_18px_42px_-32px_rgba(17,24,39,0.52)]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-extrabold text-primary uppercase tracking-[0.16em]">Health Summary</p>
+              <h2 className="text-2xl font-black tracking-tight text-text-dark mt-1">
+                {userRole === 'wife' ? 'Today with baby' : `Hi, ${user?.user_metadata?.display_name || 'there'}`}
+              </h2>
+              <p className="text-sm font-semibold text-text-muted mt-2">
+                {pregnancyInfo ? `Week ${pregnancyInfo.currentWeek} - ${pregnancyInfo.trimester}` : 'Your pregnancy overview'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/check-in')}
+              className="min-h-0 rounded-full bg-primary text-white px-4 py-2 text-sm font-black shadow-[0_14px_24px_-18px_rgba(240,95,69,0.9)]"
+            >
+              Record
+            </button>
+          </div>
+
           <div className="grid grid-cols-3 gap-2 mt-5">
-            <HeroMetric label="Kick Count" value={todayKicks} />
+            <HeroMetric label="Today" value={todayKicks} tone="primary" />
             <HeroMetric label="Days Due" value={pregnancyInfo?.daysUntilDue ?? '-'} />
             <HeroMetric label="Bag" value={`${completionPercent}%`} />
           </div>
         </section>
 
-        <section className="grid grid-cols-2 gap-3">
+        <KickSummaryChart kicks={kicks} />
+
+        <section className="grid grid-cols-3 gap-3">
           <ActionTile
-            title="Kick Record"
+            title="Kicks"
             detail={`${todayKicks} today`}
             icon={<Activity className="w-5 h-5" />}
             onClick={() => navigate('/check-in')}
@@ -111,12 +127,6 @@ export default function DashboardPage() {
             detail={`${checkedItems}/${totalItems} packed`}
             icon={<BriefcaseMedical className="w-5 h-5" />}
             onClick={() => navigate('/hospital-bag')}
-          />
-          <ActionTile
-            title="Care Tasks"
-            detail={`${pending.length} pending`}
-            icon={<ListChecks className="w-5 h-5" />}
-            onClick={() => navigate('/tasks')}
           />
         </section>
 
@@ -169,19 +179,21 @@ export default function DashboardPage() {
   )
 }
 
-function HeroMetric({ label, value }: { label: string; value: string | number }) {
+function HeroMetric({ label, value, tone = 'neutral' }: { label: string; value: string | number; tone?: 'primary' | 'neutral' }) {
   return (
-    <div className="rounded-2xl bg-white/14 px-3 py-3">
+    <div className={`rounded-2xl px-3 py-3 ${tone === 'primary' ? 'bg-primary text-white' : 'bg-cream text-text-dark'}`}>
       <p className="text-2xl font-black">{value}</p>
-      <p className="text-[10px] font-extrabold text-white/75 uppercase leading-tight mt-1">{label}</p>
+      <p className={`text-[10px] font-extrabold uppercase leading-tight mt-1 ${tone === 'primary' ? 'text-white/80' : 'text-text-muted'}`}>
+        {label}
+      </p>
     </div>
   )
 }
 
 function ActionTile({ title, detail, icon, onClick }: { title: string; detail: string; icon: React.ReactNode; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="app-card p-4 text-left min-h-[128px] flex flex-col justify-between active:bg-primary-light">
-      <div className="flex items-center justify-between">
+    <button onClick={onClick} className="app-card p-3 text-left min-h-[112px] flex flex-col justify-between active:bg-primary-light">
+      <div className="flex items-center justify-between gap-2">
         <span className="w-10 h-10 rounded-2xl bg-primary-light text-primary flex items-center justify-center">{icon}</span>
         <ChevronRight className="w-4 h-4 text-text-muted" />
       </div>
