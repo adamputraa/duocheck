@@ -47,7 +47,19 @@ function buildBuckets(range: RangeKey, kicks: BabyKick[]) {
   return buckets
 }
 
-export default function KickSummaryChart({ kicks, compact = false }: { kicks: BabyKick[]; compact?: boolean }) {
+export default function KickSummaryChart({
+  kicks,
+  compact = false,
+  showRecordAction = false,
+  onRecord,
+  recording = false
+}: {
+  kicks: BabyKick[]
+  compact?: boolean
+  showRecordAction?: boolean
+  onRecord?: () => void
+  recording?: boolean
+}) {
   const [range, setRange] = useState<RangeKey>('D')
 
   const { buckets, total, average, maxValue, unitLabel, subtitle } = useMemo(() => {
@@ -70,19 +82,19 @@ export default function KickSummaryChart({ kicks, compact = false }: { kicks: Ba
   const midValue = Math.ceil(maxValue / 2)
 
   return (
-    <section className="app-card p-6 overflow-hidden">
+    <section className="overflow-hidden rounded-[28px] border border-white bg-white p-5 shadow-[0_18px_44px_-36px_rgba(17,24,39,0.58)]">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="h-11 w-11 rounded-2xl bg-primary-light text-primary flex items-center justify-center">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-light text-primary">
             <Footprints className="h-6 w-6" />
           </span>
           <div>
-            <p className="text-2xl font-black tracking-tight text-text-dark">Kick Count</p>
-            <p className="text-xs font-bold text-text-muted">{subtitle}</p>
+            <p className="text-[25px] font-black tracking-tight text-[#171b23]">Kick Count</p>
+            <p className="text-xs font-bold text-[#687281]">{subtitle}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 overflow-hidden rounded-2xl border border-border-light bg-white shrink-0">
+        <div className="grid shrink-0 grid-cols-3 overflow-hidden rounded-2xl border border-[#dfe5eb] bg-white">
           {rangeOptions.map(option => (
             <button
               key={option.key}
@@ -90,10 +102,10 @@ export default function KickSummaryChart({ kicks, compact = false }: { kicks: Ba
               aria-label={option.label}
               aria-pressed={range === option.key}
               onClick={() => setRange(option.key)}
-              className={`min-h-0 h-11 w-12 text-sm font-black ${
+              className={`h-11 min-h-0 w-12 text-sm font-black ${
                 range === option.key
-                  ? 'bg-primary text-white'
-                  : 'text-text-muted border-l border-border-light first:border-l-0'
+                  ? 'bg-primary text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]'
+                  : 'border-l border-[#dfe5eb] text-[#687281] first:border-l-0'
               }`}
             >
               {option.key}
@@ -102,29 +114,31 @@ export default function KickSummaryChart({ kicks, compact = false }: { kicks: Ba
         </div>
       </div>
 
-      <div className="mt-5 flex items-end gap-2">
-        <span className="text-6xl font-black tracking-tight text-primary">{total}</span>
+      <div className="mt-5 flex items-end gap-2 border-b border-[#edf0f3] pb-4">
+        <span className="text-[62px] font-black leading-none tracking-tight text-primary">{total}</span>
         <div className="pb-2">
-          <p className="text-sm font-black text-text-muted">kicks</p>
-          <p className="text-xs font-bold text-text-muted">Avg {average.toFixed(1)} {unitLabel}</p>
+          <p className="text-sm font-black text-[#687281]">kicks</p>
+          <p className="text-xs font-bold text-[#687281]">Avg {average.toFixed(1)} {unitLabel}</p>
         </div>
-        <Info className="mb-3 h-4 w-4 text-text-muted" />
+        <Info className="mb-3 h-4 w-4 text-[#687281]" />
       </div>
 
-      <div className="mt-2 grid grid-cols-[34px_1fr] gap-3">
-        <div className={`flex ${compact ? 'h-36' : 'h-44'} flex-col justify-between pt-1 text-[11px] font-bold text-text-muted`}>
+      <div className="mt-4 grid grid-cols-[34px_1fr] gap-3">
+        <div className={`flex ${compact ? 'h-36' : 'h-44'} flex-col justify-between pt-1 text-[12px] font-semibold text-[#687281]`}>
           <span>{Math.ceil(maxValue)}</span>
           <span>{midValue}</span>
           <span>0</span>
         </div>
 
-        <div className={`relative ${compact ? 'h-36' : 'h-44'} border-l border-b border-border-light pl-2`}>
+        <div className={`relative ${compact ? 'h-36' : 'h-44'} border-l border-b border-[#e3e8ef] pl-2`}>
+          <div className="absolute inset-x-2 top-1/3 border-t border-[#eef2f6]" />
+          <div className="absolute inset-x-2 top-2/3 border-t border-[#eef2f6]" />
           <div
-            className="absolute left-2 right-0 z-20 border-t border-dashed border-primary/70"
+            className="absolute left-2 right-0 z-20 border-t-2 border-dashed border-[#29b8ad]"
             style={{ bottom: averagePosition }}
           >
-            <span className="absolute right-0 -top-3 bg-white px-1 text-sm font-black text-primary">
-              {average.toFixed(1)}
+            <span className="absolute right-0 -top-3 bg-white px-1 text-sm font-black text-[#29a99f]">
+              Avg {average.toFixed(1)}
             </span>
           </div>
 
@@ -140,7 +154,7 @@ export default function KickSummaryChart({ kicks, compact = false }: { kicks: Ba
                 <div key={bucket.key} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
                   <span
                     className={`h-4 text-center text-[11px] font-black leading-none ${
-                      showValue ? (isLatest ? 'text-text-dark' : 'text-text-muted') : 'text-transparent'
+                      showValue ? (isLatest ? 'text-[#171b23]' : 'text-[#687281]') : 'text-transparent'
                     }`}
                   >
                     {showValue ? bucket.count : '.'}
@@ -152,15 +166,15 @@ export default function KickSummaryChart({ kicks, compact = false }: { kicks: Ba
                         bucket.count > 0
                           ? isLatest
                             ? 'bg-primary shadow-[0_8px_16px_-10px_rgba(240,95,69,0.75)]'
-                            : 'bg-primary/35'
-                          : 'bg-slate-200'
+                            : 'bg-primary/80'
+                          : 'bg-[#e7edf3]'
                       }`}
                       style={{ height }}
                     />
                   </div>
                   <span
                     className={`h-4 text-center text-[10px] font-bold leading-none ${
-                      isLatest ? 'text-primary' : shouldShowLabel ? 'text-text-muted' : 'text-transparent'
+                      isLatest ? 'text-primary' : shouldShowLabel ? 'text-[#687281]' : 'text-transparent'
                     }`}
                   >
                     {shouldShowLabel ? bucket.label : '.'}
@@ -172,9 +186,21 @@ export default function KickSummaryChart({ kicks, compact = false }: { kicks: Ba
         </div>
       </div>
 
-      <div className="mt-5 flex w-full items-center justify-between border-t border-border-light pt-4 text-left">
-        <span className="flex items-center gap-3 text-sm font-semibold text-text-muted">
-          <ShieldCheck className="h-5 w-5 text-primary" />
+      {showRecordAction && (
+        <button
+          type="button"
+          onClick={onRecord}
+          disabled={recording || !onRecord}
+          className="mt-6 flex w-full items-center justify-center gap-3 rounded-[18px] bg-primary px-5 py-4 text-lg font-black text-white shadow-[0_18px_30px_-20px_rgba(240,95,69,0.9)] disabled:opacity-70"
+        >
+          <Footprints className="h-6 w-6" />
+          {recording ? 'Recording...' : 'Record Kick'}
+        </button>
+      )}
+
+      <div className="mt-5 flex w-full items-center justify-between border-t border-[#edf0f3] pt-4 text-left">
+        <span className="flex items-center gap-3 text-sm font-semibold text-[#687281]">
+          <ShieldCheck className="h-5 w-5 text-[#29a99f]" />
           Babies are often active after meals and in the evening.
         </span>
       </div>
